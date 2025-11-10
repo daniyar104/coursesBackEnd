@@ -16,7 +16,7 @@ model categories {
 
 model certificates {
   certificate_id  Int       @id @default(autoincrement())
-  user_id         Int?
+  user_id         String?   @db.VarChar(36)
   course_id       Int?
   issued_at       DateTime? @default(now()) @db.Timestamp(6)
   certificate_url String?
@@ -26,13 +26,12 @@ model certificates {
   @@unique([user_id, course_id], map: "idx_certificates_user_course")
 }
 
-/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 model courses {
   course_id        Int            @id @default(autoincrement())
   title            String         @db.VarChar(150)
   description      String?
   category_id      Int?
-  instructor_id    Int?
+  instructor_id    String?        @db.VarChar(36)
   price            Decimal?       @default(0) @db.Decimal(10, 2)
   created_at       DateTime?      @default(now()) @db.Timestamp(6)
   updated_at       DateTime?      @default(now()) @db.Timestamp(6)
@@ -51,10 +50,9 @@ model courses {
   @@index([title], map: "idx_courses_title")
 }
 
-/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 model enrollments {
   enrollment_id Int       @id @default(autoincrement())
-  user_id       Int?
+  user_id       String?   @db.VarChar(36)
   course_id     Int?
   enrolled_at   DateTime? @default(now()) @db.Timestamp(6)
   progress      Decimal?  @default(0) @db.Decimal(5, 2)
@@ -81,10 +79,9 @@ model lessons {
   @@index([course_id], map: "idx_lessons_course")
 }
 
-/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 model payments {
   payment_id   Int       @id @default(autoincrement())
-  user_id      Int?
+  user_id      String?   @db.VarChar(36)
   course_id    Int?
   amount       Decimal   @db.Decimal(10, 2)
   status       String?   @default("pending") @db.VarChar(20)
@@ -97,11 +94,10 @@ model payments {
   @@index([user_id], map: "idx_payments_user")
 }
 
-/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 model reviews {
   review_id  Int       @id @default(autoincrement())
   course_id  Int?
-  user_id    Int?
+  user_id    String?   @db.VarChar(36)
   rating     Int?
   comment    String?
   created_at DateTime? @default(now()) @db.Timestamp(6)
@@ -113,15 +109,14 @@ model reviews {
   @@index([rating], map: "idx_reviews_rating")
 }
 
-/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 model users {
-  user_id       String         @id
-  firstName String             @map("first_name")
-  surname   String             @map("sur_name")
+  user_id       String         @id @db.VarChar(36)
   email         String         @unique @db.VarChar(100)
   password_hash String
   role          String?        @default("student") @db.VarChar(20)
   created_at    DateTime?      @default(now()) @db.Timestamp(6)
+  firstName     String         @map("first_name") @db.VarChar(100)
+  surname       String         @map("sur_name") @db.VarChar(100)
   certificates  certificates[]
   courses       courses[]
   enrollments   enrollments[]
