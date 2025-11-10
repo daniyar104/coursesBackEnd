@@ -23,8 +23,7 @@ export class AuthService {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const userId =
-      Math.floor(Date.now() / 1000) * 1000 + Math.floor(Math.random() * 1000);
+    const userId = `${Math.floor(Date.now() / 1000) * 1000 + Math.floor(Math.random() * 1000)}`;
 
     const user = await this.prisma.users.create({
       data: {
