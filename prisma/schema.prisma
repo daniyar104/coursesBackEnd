@@ -8,56 +8,63 @@ datasource db {
 }
 
 model categories {
-  category_id Int       @id @default(autoincrement())
-  name        String    @unique @db.VarChar(100)
+  id          String    @id @db.VarChar(16)
+  name        String    @unique @db.VarChar(200)
   description String?
+  created_at  DateTime  @default(now()) @db.Timestamptz(6)
   courses     courses[]
 }
 
 model certificates {
-  certificate_id  Int       @id @default(autoincrement())
-  user_id         String?   @db.VarChar(36)
-  course_id       Int?
-  issued_at       DateTime? @default(now()) @db.Timestamp(6)
-  certificate_url String?
-  courses         courses?  @relation(fields: [course_id], references: [course_id], onDelete: Cascade, onUpdate: NoAction)
-  users           users?    @relation(fields: [user_id], references: [user_id], onDelete: Cascade, onUpdate: NoAction)
+  id            String       @id @db.VarChar(16)
+  user_id       String       @db.VarChar(16)
+  course_id     String       @db.VarChar(16)
+  enrollment_id String?      @db.VarChar(16)
+  issued_at     DateTime     @default(now()) @db.Timestamptz(6)
+  cert_data     Json?
+  created_at    DateTime     @default(now()) @db.Timestamptz(6)
+  courses       courses      @relation(fields: [course_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  enrollments   enrollments? @relation(fields: [enrollment_id], references: [id], onUpdate: NoAction)
+  users         users        @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
-  @@unique([user_id, course_id], map: "idx_certificates_user_course")
+  @@index([course_id], map: "idx_certificates_course")
+  @@index([user_id], map: "idx_certificates_user")
 }
 
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains an expression index which requires additional setup for migrations. Visit https://pris.ly/d/expression-indexes for more info.
 model courses {
-  course_id        Int            @id @default(autoincrement())
-  title            String         @db.VarChar(150)
-  description      String?
-  category_id      Int?
-  instructor_id    String?        @db.VarChar(36)
-  price            Decimal?       @default(0) @db.Decimal(10, 2)
-  created_at       DateTime?      @default(now()) @db.Timestamp(6)
-  updated_at       DateTime?      @default(now()) @db.Timestamp(6)
-  difficulty_level String?        @db.VarChar(20)
-  avg_rating       Decimal?       @default(0) @db.Decimal(3, 2)
-  review_count     Int?           @default(0)
-  certificates     certificates[]
-  categories       categories?    @relation(fields: [category_id], references: [category_id], onUpdate: NoAction)
-  users            users?         @relation(fields: [instructor_id], references: [user_id], onDelete: Cascade, onUpdate: NoAction)
-  enrollments      enrollments[]
-  lessons          lessons[]
-  payments         payments[]
-  reviews          reviews[]
+  id                String         @id @db.VarChar(16)
+  title             String         @db.VarChar(300)
+  short_description String?        @db.VarChar(1000)
+  full_description  String?
+  review_count      Int            @default(0)
+  avg_rating        Decimal?       @default(0) @db.Decimal(3, 2)
+  difficulty_level  String?        @db.VarChar(50)
+  category_id       String?        @db.VarChar(16)
+  created_at        DateTime       @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime       @default(now()) @db.Timestamptz(6)
+  certificates      certificates[]
+  categories        categories?    @relation(fields: [category_id], references: [id], onUpdate: NoAction)
+  enrollments       enrollments[]
+  modules           modules[]
+  payments          payments[]
+  reviews           reviews[]
 
   @@index([category_id], map: "idx_courses_category")
-  @@index([title], map: "idx_courses_title")
+  @@index([difficulty_level], map: "idx_courses_difficulty")
 }
 
 model enrollments {
-  enrollment_id Int       @id @default(autoincrement())
-  user_id       String?   @db.VarChar(36)
-  course_id     Int?
-  enrolled_at   DateTime? @default(now()) @db.Timestamp(6)
-  progress      Decimal?  @default(0) @db.Decimal(5, 2)
-  courses       courses?  @relation(fields: [course_id], references: [course_id], onDelete: Cascade, onUpdate: NoAction)
-  users         users?    @relation(fields: [user_id], references: [user_id], onDelete: Cascade, onUpdate: NoAction)
+  id           String         @id @db.VarChar(16)
+  user_id      String         @db.VarChar(16)
+  course_id    String         @db.VarChar(16)
+  enrolled_at  DateTime       @default(now()) @db.Timestamptz(6)
+  status       String         @default("active") @db.VarChar(50)
+  progress     Decimal        @default(0) @db.Decimal(5, 2)
+  certificates certificates[]
+  courses      courses        @relation(fields: [course_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users        users          @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@unique([user_id, course_id])
   @@index([course_id], map: "idx_enrollments_course")
@@ -65,63 +72,79 @@ model enrollments {
 }
 
 model lessons {
-  lesson_id  Int       @id @default(autoincrement())
-  course_id  Int?
-  title      String    @db.VarChar(150)
+  id         String   @id @db.VarChar(16)
+  module_id  String   @db.VarChar(16)
+  title      String   @db.VarChar(300)
   content    String?
-  position   Int?      @default(1)
-  created_at DateTime? @default(now()) @db.Timestamp(6)
   video_url  String?
   image_url  String?
   test       Json?
-  courses    courses?  @relation(fields: [course_id], references: [course_id], onDelete: Cascade, onUpdate: NoAction)
+  position   Int      @default(0)
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+  updated_at DateTime @default(now()) @db.Timestamptz(6)
+  modules    modules  @relation(fields: [module_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
-  @@index([course_id], map: "idx_lessons_course")
+  @@index([module_id], map: "idx_lessons_module_id")
+  @@index([module_id, position], map: "idx_lessons_module_position")
+}
+
+model modules {
+  id          String    @id @db.VarChar(16)
+  course_id   String    @db.VarChar(16)
+  title       String    @db.VarChar(300)
+  description String?
+  position    Int       @default(0)
+  created_at  DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime  @default(now()) @db.Timestamptz(6)
+  lessons     lessons[]
+  courses     courses   @relation(fields: [course_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([course_id], map: "idx_modules_course_id")
 }
 
 model payments {
-  payment_id   Int       @id @default(autoincrement())
-  user_id      String?   @db.VarChar(36)
-  course_id    Int?
-  amount       Decimal   @db.Decimal(10, 2)
-  status       String?   @default("pending") @db.VarChar(20)
-  payment_date DateTime? @default(now()) @db.Timestamp(6)
-  courses      courses?  @relation(fields: [course_id], references: [course_id], onDelete: Cascade, onUpdate: NoAction)
-  users        users?    @relation(fields: [user_id], references: [user_id], onDelete: Cascade, onUpdate: NoAction)
+  id                  String   @id @db.VarChar(16)
+  user_id             String?  @db.VarChar(16)
+  course_id           String?  @db.VarChar(16)
+  amount_cents        BigInt
+  currency            String   @default("USD") @db.VarChar(10)
+  payment_date        DateTime @default(now()) @db.Timestamptz(6)
+  provider            String?  @db.VarChar(100)
+  provider_payment_id String?
+  created_at          DateTime @default(now()) @db.Timestamptz(6)
+  courses             courses? @relation(fields: [course_id], references: [id], onUpdate: NoAction)
+  users               users?   @relation(fields: [user_id], references: [id], onUpdate: NoAction)
 
-  @@index([course_id], map: "idx_payments_course")
-  @@index([status], map: "idx_payments_status")
-  @@index([user_id], map: "idx_payments_user")
+  @@index([user_id, payment_date], map: "idx_payments_user_date")
 }
 
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 model reviews {
-  review_id  Int       @id @default(autoincrement())
-  course_id  Int?
-  user_id    String?   @db.VarChar(36)
-  rating     Int?
-  comment    String?
-  created_at DateTime? @default(now()) @db.Timestamp(6)
-  courses    courses?  @relation(fields: [course_id], references: [course_id], onDelete: Cascade, onUpdate: NoAction)
-  users      users?    @relation(fields: [user_id], references: [user_id], onDelete: Cascade, onUpdate: NoAction)
+  id          String   @id @db.VarChar(16)
+  user_id     String   @db.VarChar(16)
+  course_id   String   @db.VarChar(16)
+  rating      Int      @db.SmallInt
+  text        String?
+  review_date DateTime @default(now()) @db.Timestamptz(6)
+  created_at  DateTime @default(now()) @db.Timestamptz(6)
+  courses     courses  @relation(fields: [course_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users       users    @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
-  @@unique([course_id, user_id])
   @@index([course_id], map: "idx_reviews_course")
-  @@index([rating], map: "idx_reviews_rating")
+  @@index([user_id], map: "idx_reviews_user")
 }
 
 model users {
-  user_id       String         @id @db.VarChar(36)
-  email         String         @unique @db.VarChar(100)
+  id            String         @id @db.VarChar(16)
+  first_name    String         @db.VarChar(100)
+  sur_name      String         @db.VarChar(100)
+  email         String         @unique @db.VarChar(255)
   password_hash String
-  role          String?        @default("student") @db.VarChar(20)
-  created_at    DateTime?      @default(now()) @db.Timestamp(6)
-  firstName     String         @map("first_name") @db.VarChar(100)
-  surname       String         @map("sur_name") @db.VarChar(100)
+  role          String         @default("student") @db.VarChar(50)
+  created_at    DateTime       @default(now()) @db.Timestamptz(6)
+  updated_at    DateTime       @default(now()) @db.Timestamptz(6)
   certificates  certificates[]
-  courses       courses[]
   enrollments   enrollments[]
   payments      payments[]
   reviews       reviews[]
-
-  @@index([email], map: "idx_users_email")
 }
