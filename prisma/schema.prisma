@@ -50,6 +50,7 @@ model courses {
   modules           modules[]
   payments          payments[]
   reviews           reviews[]
+  lesson_completions lesson_completions[]
 
   @@index([category_id], map: "idx_courses_category")
   @@index([difficulty_level], map: "idx_courses_difficulty")
@@ -83,6 +84,7 @@ model lessons {
   created_at DateTime @default(now()) @db.Timestamptz(6)
   updated_at DateTime @default(now()) @db.Timestamptz(6)
   modules    modules  @relation(fields: [module_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  lesson_completions lesson_completions[]
 
   @@index([module_id], map: "idx_lessons_module_id")
   @@index([module_id, position], map: "idx_lessons_module_position")
@@ -147,4 +149,21 @@ model users {
   enrollments   enrollments[]
   payments      payments[]
   reviews       reviews[]
+  lesson_completions lesson_completions[]
+}
+
+model lesson_completions {
+  id          String   @id @db.VarChar(16)
+  user_id     String   @db.VarChar(16)
+  lesson_id   String   @db.VarChar(16)
+  course_id   String   @db.VarChar(16)
+  completed_at DateTime @default(now()) @db.Timestamptz(6)
+  
+  users       users    @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  lessons     lessons  @relation(fields: [lesson_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  courses     courses  @relation(fields: [course_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([user_id, lesson_id])
+  @@index([user_id], map: "idx_lesson_completions_user")
+  @@index([course_id], map: "idx_lesson_completions_course")
 }

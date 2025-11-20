@@ -1,0 +1,68 @@
+API Endpoints
+
+1. Auth Module
+   - POST /auth/register
+     - Body: RegisterDto
+       - firstName: string
+       - surname: string
+       - email: string (email format)
+       - password: string (min length 6)
+     - Returns:
+       - 201 Created: { user: User }
+       - 401 Unauthorized: { message: "Email already registered" }
+
+   - POST /auth/login
+     - Body:
+       - email: string
+       - password: string
+     - Returns:
+       - 201 Created: { user: User, token: string }
+       - 401 Unauthorized: { message: "Invalid credentials" }
+
+   - GET /auth/profile
+     - Headers: Authorization: Bearer <token>
+     - Returns:
+       - 200 OK: User (payload from token)
+       - 401 Unauthorized: { message: "Invalid token" }
+
+2. Courses Module
+   - GET /courses
+     - Returns:
+       - 200 OK: { data: Course[] } (includes categories and module count)
+
+   - GET /courses/:id
+     - Params: id (string)
+     - Returns:
+       - 200 OK: { data: Course } (includes modules, lessons, categories, reviews)
+       - 404 Not Found: { message: "Course not found" }
+
+   - POST /courses/:id/register
+     - Params: id (string)
+     - Headers: Authorization: Bearer <token>
+     - Returns:
+       - 201 Created: { message: "Successfully registered", enrollment: Enrollment }
+       - 201 Created: { message: "User already enrolled", enrollment: Enrollment }
+       - 404 Not Found: { message: "Course not found" }
+
+   - POST /courses/:id/lessons/:lessonId/complete
+     - Params: id (string), lessonId (string)
+     - Headers: Authorization: Bearer <token>
+     - Returns:
+       - 201 Created: { message: "Lesson completed", progress: number }
+       - 404 Not Found: { message: "User is not enrolled in this course" }
+       - 404 Not Found: { message: "Lesson not found in this course" }
+
+   - GET /courses/:id/progress
+     - Params: id (string)
+     - Headers: Authorization: Bearer <token>
+     - Returns:
+       - 200 OK: { progress: number, completedLessonIds: string[] }
+       - 404 Not Found: { message: "User is not enrolled in this course" }
+
+3. Users Module
+   - GET /users/me
+     - Headers: Authorization: Bearer <token>
+     - Returns:
+       - 200 OK: User (excluding password hash)
+       - 404 Not Found: { message: "User not found" }
+
