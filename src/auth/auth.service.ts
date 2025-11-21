@@ -9,7 +9,7 @@ export class AuthService {
   constructor(
     private prisma: PrismaService,
     private jwtService: JwtService,
-  ) {}
+  ) { }
 
   async register(
     firstName: string,
@@ -51,7 +51,7 @@ export class AuthService {
   async verifyToken(token: string) {
     try {
       const payload = this.jwtService.verify(token);
-      const user = await this.prisma.users.findUnique({ where: { id: payload.userId } });
+      const user = await this.prisma.users.findUnique({ where: { id: payload.sub } });
       return user;
     } catch {
       throw new UnauthorizedException('Invalid token');

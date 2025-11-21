@@ -34,23 +34,23 @@ model certificates {
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 /// This model contains an expression index which requires additional setup for migrations. Visit https://pris.ly/d/expression-indexes for more info.
 model courses {
-  id                String         @id @db.VarChar(16)
-  title             String         @db.VarChar(300)
-  short_description String?        @db.VarChar(1000)
-  full_description  String?
-  review_count      Int            @default(0)
-  avg_rating        Decimal?       @default(0) @db.Decimal(3, 2)
-  difficulty_level  String?        @db.VarChar(50)
-  category_id       String?        @db.VarChar(16)
-  created_at        DateTime       @default(now()) @db.Timestamptz(6)
-  updated_at        DateTime       @default(now()) @db.Timestamptz(6)
-  certificates      certificates[]
-  categories        categories?    @relation(fields: [category_id], references: [id], onUpdate: NoAction)
-  enrollments       enrollments[]
-  modules           modules[]
-  payments          payments[]
-  reviews           reviews[]
+  id                 String               @id @db.VarChar(16)
+  title              String               @db.VarChar(300)
+  short_description  String?              @db.VarChar(1000)
+  full_description   String?
+  review_count       Int                  @default(0)
+  avg_rating         Decimal?             @default(0) @db.Decimal(3, 2)
+  difficulty_level   String?              @db.VarChar(50)
+  category_id        String?              @db.VarChar(16)
+  created_at         DateTime             @default(now()) @db.Timestamptz(6)
+  updated_at         DateTime             @default(now()) @db.Timestamptz(6)
+  certificates       certificates[]
+  categories         categories?          @relation(fields: [category_id], references: [id], onUpdate: NoAction)
+  enrollments        enrollments[]
   lesson_completions lesson_completions[]
+  modules            modules[]
+  payments           payments[]
+  reviews            reviews[]
 
   @@index([category_id], map: "idx_courses_category")
   @@index([difficulty_level], map: "idx_courses_difficulty")
@@ -73,18 +73,18 @@ model enrollments {
 }
 
 model lessons {
-  id         String   @id @db.VarChar(16)
-  module_id  String   @db.VarChar(16)
-  title      String   @db.VarChar(300)
-  content    String?
-  video_url  String?
-  image_url  String?
-  test       Json?
-  position   Int      @default(0)
-  created_at DateTime @default(now()) @db.Timestamptz(6)
-  updated_at DateTime @default(now()) @db.Timestamptz(6)
-  modules    modules  @relation(fields: [module_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  id                 String               @id @db.VarChar(16)
+  module_id          String               @db.VarChar(16)
+  title              String               @db.VarChar(300)
+  content            String?
+  video_url          String?
+  image_url          String?
+  test               Json?
+  position           Int                  @default(0)
+  created_at         DateTime             @default(now()) @db.Timestamptz(6)
+  updated_at         DateTime             @default(now()) @db.Timestamptz(6)
   lesson_completions lesson_completions[]
+  modules            modules              @relation(fields: [module_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@index([module_id], map: "idx_lessons_module_id")
   @@index([module_id, position], map: "idx_lessons_module_position")
@@ -137,31 +137,30 @@ model reviews {
 }
 
 model users {
-  id            String         @id @db.VarChar(16)
-  first_name    String         @db.VarChar(100)
-  sur_name      String         @db.VarChar(100)
-  email         String         @unique @db.VarChar(255)
-  password_hash String
-  role          String         @default("student") @db.VarChar(50)
-  created_at    DateTime       @default(now()) @db.Timestamptz(6)
-  updated_at    DateTime       @default(now()) @db.Timestamptz(6)
-  certificates  certificates[]
-  enrollments   enrollments[]
-  payments      payments[]
-  reviews       reviews[]
+  id                 String               @id @db.VarChar(16)
+  first_name         String               @db.VarChar(100)
+  sur_name           String               @db.VarChar(100)
+  email              String               @unique @db.VarChar(255)
+  password_hash      String
+  role               String               @default("student") @db.VarChar(50)
+  created_at         DateTime             @default(now()) @db.Timestamptz(6)
+  updated_at         DateTime             @default(now()) @db.Timestamptz(6)
+  certificates       certificates[]
+  enrollments        enrollments[]
   lesson_completions lesson_completions[]
+  payments           payments[]
+  reviews            reviews[]
 }
 
 model lesson_completions {
-  id          String   @id @db.VarChar(16)
-  user_id     String   @db.VarChar(16)
-  lesson_id   String   @db.VarChar(16)
-  course_id   String   @db.VarChar(16)
+  id           String   @id @db.VarChar(16)
+  user_id      String   @db.VarChar(16)
+  lesson_id    String   @db.VarChar(16)
+  course_id    String   @db.VarChar(16)
   completed_at DateTime @default(now()) @db.Timestamptz(6)
-  
-  users       users    @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  lessons     lessons  @relation(fields: [lesson_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  courses     courses  @relation(fields: [course_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  courses      courses  @relation(fields: [course_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  lessons      lessons  @relation(fields: [lesson_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users        users    @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@unique([user_id, lesson_id])
   @@index([user_id], map: "idx_lesson_completions_user")
