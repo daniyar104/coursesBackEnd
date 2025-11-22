@@ -30,6 +30,37 @@ API Endpoints
      - Returns:
        - 200 OK: { data: Course[] } (includes categories and module count)
 
+   - GET /courses/categories
+     - Returns:
+       - 200 OK: { data: Category[] }
+       - Category includes:
+         - id: string
+         - name: string
+         - description: string | null
+         - created_at: Date
+
+
+   - GET /courses/enrolled/with-last-lesson
+     - Headers: Authorization: Bearer <token>
+     - Returns:
+       - 200 OK: { data: Course[] } (includes categories, module count, lesson count, enrollment details, and last lesson)
+       - Course includes:
+         - All course fields
+         - categories: Category[]
+         - _count: { modules: number, lessons: number }
+         - enrollment: { id: string, status: string, progress: number, enrolled_at: Date }
+         - lastLesson: { id: string, title: string, module: { id: string, title: string } } | null
+
+   - GET /courses/enrolled
+     - Headers: Authorization: Bearer <token>
+     - Returns:
+       - 200 OK: { data: Course[] } (includes categories, module count, lesson count, and enrollment details)
+       - Course includes:
+         - All course fields
+         - categories: Category[]
+         - _count: { modules: number, lessons: number }
+         - enrollment: { id: string, status: string, progress: number, enrolled_at: Date }
+
    - GET /courses/:id
      - Params: id (string)
      - Returns:
@@ -44,6 +75,14 @@ API Endpoints
        - 201 Created: { message: "User already enrolled", enrollment: Enrollment }
        - 404 Not Found: { message: "Course not found" }
 
+   - POST /courses/:id/lessons/:lessonId/access
+     - Params: id (string), lessonId (string)
+     - Headers: Authorization: Bearer <token>
+     - Returns:
+       - 200 OK: { message: "Last lesson updated successfully" }
+       - 404 Not Found: { message: "User is not enrolled in this course" }
+       - 404 Not Found: { message: "Lesson not found in this course" }
+
    - POST /courses/:id/lessons/:lessonId/complete
      - Params: id (string), lessonId (string)
      - Headers: Authorization: Bearer <token>
@@ -51,6 +90,7 @@ API Endpoints
        - 201 Created: { message: "Lesson completed", progress: number }
        - 404 Not Found: { message: "User is not enrolled in this course" }
        - 404 Not Found: { message: "Lesson not found in this course" }
+
 
    - GET /courses/:id/progress
      - Params: id (string)

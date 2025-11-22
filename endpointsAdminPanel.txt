@@ -1,0 +1,352 @@
+Admin Panel API Endpoints
+=========================
+
+All admin endpoints require:
+- JWT Authentication (Authorization: Bearer <token>)
+- Role: teacher
+
+To register as a teacher:
+POST /auth/register
+Body:
+{
+  "first_name": "John",
+  "surname": "Doe",
+  "email": "teacher@example.com",
+  "password": "password123",
+  "role": "teacher",
+  "secretKey": "super_secret_admin_key" (or value of ADMIN_SECRET_KEY env var)
+}
+
+---
+
+1. Categories Management
+   - POST /admin/categories
+     - Body: CreateCategoryDto
+       - name: string (required, max 200 chars)
+       - description: string (optional)
+     - Returns:
+       - 201 Created: { message: "Category created successfully", category: Category }
+       - 409 Conflict: { message: "Category with this name already exists" }
+       - 403 Forbidden: { message: "Insufficient permissions" } (if not teacher)
+
+   - GET /admin/categories
+     - Returns:
+       - 200 OK: Category[] (includes course count)
+       - Category includes:
+         - id: string
+         - name: string
+         - description: string | null
+         - created_at: Date
+         - _count: { courses: number }
+
+   - GET /admin/categories/:id
+     - Params: id (string)
+     - Returns:
+       - 200 OK: Category (includes course count)
+       - 404 Not Found: { message: "Category not found" }
+
+   - PATCH /admin/categories/:id
+     - Params: id (string)
+     - Body: UpdateCategoryDto
+       - name: string (optional, max 200 chars)
+       - description: string (optional)
+     - Returns:
+       - 200 OK: { message: "Category updated successfully", category: Category }
+       - 404 Not Found: { message: "Category not found" }
+       - 409 Conflict: { message: "Category with this name already exists" }
+
+   - DELETE /admin/categories/:id
+     - Params: id (string)
+     - Returns:
+       - 200 OK: { message: "Category deleted successfully" }
+       - 404 Not Found: { message: "Category not found" }
+       - 409 Conflict: { message: "Cannot delete category. It is used by X course(s)" }
+
+---
+
+2. Courses Management (Admin)
+   - POST /admin/courses
+     - Body: CreateCourseDto
+       - title: string (required, max 300 chars)
+       - short_description: string (optional, max 1000 chars)
+       - full_description: string (optional)
+       - difficulty_level: string (optional, max 50 chars)
+       - category_id: string (required)
+     - Returns:
+       - 201 Created: { message: "Course created successfully", course: Course }
+       - 404 Not Found: { message: "Category not found" }
+       - 403 Forbidden: { message: "Insufficient permissions" }
+
+   - GET /admin/courses
+     - Returns:
+       - 200 OK: Course[] (admin view with enrollment and review counts)
+       - Course includes:
+         - All course fields
+         - categories: Category
+         - _count: { modules: number, lessons: number, enrollments: number, reviews: number }
+
+   - GET /admin/courses/:id
+     - Params: id (string)
+     - Returns:
+       - 200 OK: Course (includes modules, lessons, categories, reviews)
+       - 404 Not Found: { message: "Course not found" }
+
+   - PATCH /admin/courses/:id
+     - Params: id (string)
+     - Body: UpdateCourseDto
+       - title: string (optional, max 300 chars)
+       - short_description: string (optional, max 1000 chars)
+       - full_description: string (optional)
+       - difficulty_level: string (optional, max 50 chars)
+       - category_id: string (optional)
+     - Returns:
+       - 200 OK: { message: "Course updated successfully", course: Course }
+       - 404 Not Found: { message: "Course not found" } or { message: "Category not found" }
+
+   - DELETE /admin/courses/:id
+     - Params: id (string)
+     - Returns:
+       - 200 OK: { 
+           message: "Course deleted successfully",
+           deletedModules: number,
+           affectedEnrollments: number
+         }
+       - 404 Not Found: { message: "Course not found" }
+     - Note: Cascade deletes all modules, lessons, and enrollments
+
+---
+
+3. Modules Management
+   - POST /admin/courses/:courseId/modules
+     - Params: courseId (string)
+     - Body: CreateModuleDto
+       - title: string (required, max 300 chars)
+       - description: string (optional)
+       - position: number (optional, min 0, auto-assigned if not provided)
+     - Returns:
+       - 201 Created: { message: "Module created successfully", module: Module }
+       - 404 Not Found: { message: "Course not found" }
+
+   - GET /admin/courses/:courseId/modules
+     - Params: courseId (string)
+     - Returns:
+       - 200 OK: Module[] (ordered by position, includes lesson count)
+       - 404 Not Found: { message: "Course not found" }
+
+   - GET /admin/courses/:courseId/modules/:id
+     - Params: courseId (string), id (string)
+     - Returns:
+       - 200 OK: Module (includes lessons array and lesson count)
+       - 404 Not Found: { message: "Module not found" }
+
+   - PATCH /admin/courses/:courseId/modules/:id
+     - Params: courseId (string), id (string)
+     - Body: UpdateModuleDto
+       - title: string (optional, max 300 chars)
+       - description: string (optional)
+       - position: number (optional, min 0)
+     - Returns:
+       - 200 OK: { message: "Module updated successfully", module: Module }
+       - 404 Not Found: { message: "Module not found" }
+
+   - DELETE /admin/courses/:courseId/modules/:id
+     - Params: courseId (string), id (string)
+     - Returns:
+       - 200 OK: { 
+           message: "Module deleted successfully",
+           deletedLessons: number
+         }
+       - 404 Not Found: { message: "Module not found" }
+     - Note: Cascade deletes all lessons in the module
+
+   - PATCH /admin/courses/:courseId/modules/:id/reorder
+     - Params: courseId (string), id (string)
+     - Body:
+       - position: number (required)
+     - Returns:
+       - 200 OK: { message: "Module position updated successfully", module: Module }
+       - 404 Not Found: { message: "Module not found" }
+
+---
+
+4. Lessons Management
+   - POST /admin/courses/:courseId/modules/:moduleId/lessons
+     - Params: courseId (string), moduleId (string)
+     - Body: CreateLessonDto
+       - title: string (required, max 300 chars)
+       - content: string (optional)
+       - position: number (optional, min 0, auto-assigned if not provided)
+     - Returns:
+       - 201 Created: { message: "Lesson created successfully", lesson: Lesson }
+       - 404 Not Found: { message: "Module not found in this course" }
+
+   - GET /admin/courses/:courseId/modules/:moduleId/lessons
+     - Params: courseId (string), moduleId (string)
+     - Returns:
+       - 200 OK: Lesson[] (ordered by position)
+       - 404 Not Found: { message: "Module not found in this course" }
+
+   - GET /admin/courses/:courseId/modules/:moduleId/lessons/:id
+     - Params: courseId (string), moduleId (string), id (string)
+     - Returns:
+       - 200 OK: Lesson
+       - 404 Not Found: { message: "Module not found in this course" } or { message: "Lesson not found" }
+
+   - PATCH /admin/courses/:courseId/modules/:moduleId/lessons/:id
+     - Params: courseId (string), moduleId (string), id (string)
+     - Body: UpdateLessonDto
+       - title: string (optional, max 300 chars)
+       - content: string (optional)
+       - position: number (optional, min 0)
+     - Returns:
+       - 200 OK: { message: "Lesson updated successfully", lesson: Lesson }
+       - 404 Not Found: { message: "Module not found in this course" } or { message: "Lesson not found" }
+
+   - DELETE /admin/courses/:courseId/modules/:moduleId/lessons/:id
+     - Params: courseId (string), moduleId (string), id (string)
+     - Returns:
+       - 200 OK: { message: "Lesson deleted successfully" }
+       - 404 Not Found: { message: "Module not found in this course" } or { message: "Lesson not found" }
+
+   - PATCH /admin/courses/:courseId/modules/:moduleId/lessons/:id/reorder
+     - Params: courseId (string), moduleId (string), id (string)
+     - Body:
+       - position: number (required)
+     - Returns:
+       - 200 OK: { message: "Lesson position updated successfully", lesson: Lesson }
+       - 404 Not Found: { message: "Module not found in this course" } or { message: "Lesson not found" }
+
+   - POST /admin/courses/:courseId/modules/:moduleId/lessons/:id/material
+     - Params: courseId (string), moduleId (string), id (string)
+     - Body: Multipart Form Data
+       - file: File (required, must be PDF)
+     - Returns:
+       - 200 OK: { message: "Material uploaded successfully", lesson: Lesson }
+       - 400 Bad Request: { message: "No file provided" } or { message: "Only PDF files are allowed" }
+       - 404 Not Found: { message: "Lesson not found" }
+
+   Note: Students can access the uploaded material via the `material_url` field in the lesson object returned by `GET /courses/:id`.
+
+---
+
+5. Dashboard & Statistics
+   - GET /admin/dashboard/stats
+     - Returns:
+       - 200 OK: { data: DashboardStats }
+       - DashboardStats includes:
+         - overview: {
+             totalCourses: number,
+             totalModules: number,
+             totalLessons: number,
+             totalEnrollments: number,
+             totalCategories: number,
+             totalReviews: number,
+             activeEnrollments: number,
+             averageRating: number
+           }
+         - recentActivity: {
+             enrollmentsLast30Days: number
+           }
+         - topCourses: Array<{
+             id: string,
+             title: string,
+             category: string,
+             enrollmentCount: number,
+             reviewCount: number,
+             avgRating: number
+           }>
+
+   - GET /admin/dashboard/courses
+     - Returns:
+       - 200 OK: { data: CourseStats[] }
+       - CourseStats includes:
+         - id: string
+         - title: string
+         - category: string
+         - difficulty: string
+         - avgRating: number
+         - content: { modules: number, lessons: number }
+         - enrollments: { total: number, active: number, averageProgress: number }
+         - reviews: { total: number }
+
+   - GET /admin/dashboard/courses/:id/stats
+     - Params: id (string)
+     - Returns:
+       - 200 OK: { data: DetailedCourseStats }
+       - DetailedCourseStats includes:
+         - course: {
+             id: string,
+             title: string,
+             category: string,
+             difficulty: string,
+             avgRating: number,
+             reviewCount: number
+           }
+         - content: {
+             modulesCount: number,
+             lessonsCount: number
+           }
+         - enrollments: {
+             total: number,
+             active: number,
+             completed: number,
+             averageProgress: number
+           }
+         - engagement: {
+             lessonCompletions: number,
+             completionRate: number
+           }
+         - reviews: {
+             total: number,
+             ratingDistribution: Array<{ rating: number, count: number }>,
+             recent: Array<{
+               id: string,
+               rating: number,
+               text: string,
+               date: Date,
+               user: string
+             }>
+           }
+         - trend: {
+             enrollmentsLast7Days: number
+           }
+       - 404 Not Found: { message: "Course not found" }
+
+---
+
+Common Error Responses:
+- 401 Unauthorized: { message: "Invalid token" } or { message: "User not authenticated" }
+- 403 Forbidden: { message: "Insufficient permissions" } (when user is not a teacher)
+- 400 Bad Request: Validation errors from DTOs
+
+---
+
+Workflow Example:
+
+1. Create a category:
+   POST /admin/categories
+   { "name": "Web Development", "description": "Learn web technologies" }
+
+2. Create a course:
+   POST /admin/courses
+   { 
+     "title": "JavaScript Basics",
+     "short_description": "Learn JS fundamentals",
+     "category_id": "CAT123"
+   }
+
+3. Create a module:
+   POST /admin/courses/CRS456/modules
+   { "title": "Variables and Data Types", "position": 0 }
+
+4. Create lessons:
+   POST /admin/courses/CRS456/modules/MOD789/lessons
+   { 
+     "title": "Introduction to Variables",
+     "content": "Variables are...",
+     "position": 0
+   }
+
+5. Reorder lessons:
+   PATCH /admin/courses/CRS456/modules/MOD789/lessons/LSN101/reorder
+   { "position": 2 }
