@@ -175,6 +175,7 @@ Body:
      - Body: CreateLessonDto
        - title: string (required, max 300 chars)
        - content: string (optional)
+       - material_type: enum (required) - one of: "PRESENTATION", "VIDEO", "LECTURE_MATERIAL"
        - position: number (optional, min 0, auto-assigned if not provided)
      - Returns:
        - 201 Created: { message: "Lesson created successfully", lesson: Lesson }
@@ -197,6 +198,7 @@ Body:
      - Body: UpdateLessonDto
        - title: string (optional, max 300 chars)
        - content: string (optional)
+       - material_type: enum (optional) - one of: "PRESENTATION", "VIDEO", "LECTURE_MATERIAL"
        - position: number (optional, min 0)
      - Returns:
        - 200 OK: { message: "Lesson updated successfully", lesson: Lesson }
@@ -344,6 +346,7 @@ Workflow Example:
    { 
      "title": "Introduction to Variables",
      "content": "Variables are...",
+     "material_type": "PRESENTATION",
      "position": 0
    }
 

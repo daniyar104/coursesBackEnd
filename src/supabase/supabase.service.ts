@@ -72,4 +72,37 @@ export class SupabaseService {
             throw error;
         }
     }
+
+    /**
+     * Get a signed URL for accessing a file in Supabase storage
+     * @param filePath - The path to the file in the bucket
+     * @param bucket - The bucket name (default: 'materials')
+     * @param expiresIn - URL expiration time in seconds (default: 3600 = 1 hour)
+     * @returns Signed URL string
+     */
+    async getSignedUrl(filePath: string, bucket: string = 'materials', expiresIn: number = 3600): Promise<string> {
+        if (!this.supabase) {
+            throw new BadRequestException('Supabase is not configured. Please set SUPABASE_URL and SUPABASE_KEY.');
+        }
+
+        if (!filePath) {
+            throw new BadRequestException('File path is required');
+        }
+
+        try {
+            const { data, error } = await this.supabase.storage
+                .from(bucket)
+                .createSignedUrl(filePath, expiresIn);
+
+            if (error) {
+                console.error('Supabase signed URL error:', error);
+                throw new BadRequestException(`Failed to generate signed URL: ${error.message}`);
+            }
+
+            return data.signedUrl;
+        } catch (error) {
+            console.error('Signed URL exception:', error);
+            throw error;
+        }
+    }
 }

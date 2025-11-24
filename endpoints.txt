@@ -106,3 +106,13 @@ API Endpoints
        - 200 OK: User (excluding password hash)
        - 404 Not Found: { message: "User not found" }
 
+4. Lessons Module
+   - GET /lessons/:id/material
+     - Params: id (string) - Lesson ID
+     - Headers: Authorization: Bearer <token>
+     - Returns:
+       - 200 OK: { lessonId: string, title: string, materialUrl: string, expiresIn: number }
+       - 404 Not Found: { message: "Lesson not found" }
+       - 404 Not Found: { message: "No material uploaded for this lesson" }
+     - Note: materialUrl is a signed URL valid for 1 hour (3600 seconds)
+

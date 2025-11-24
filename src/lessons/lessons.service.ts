@@ -76,6 +76,7 @@ export class LessonsService {
                 module_id: moduleId,
                 title: createLessonDto.title,
                 content: createLessonDto.content,
+                material_type: createLessonDto.material_type,
                 position,
             },
         });
@@ -232,5 +233,43 @@ export class LessonsService {
         });
 
         return { message: 'Lesson position updated successfully', lesson: updated };
+    }
+
+    /**
+     * Get material URL for a lesson
+     * Returns a signed URL that expires in 1 hour
+     */
+    async getMaterialUrl(lessonId: string) {
+        const lesson = await this.prisma.lessons.findUnique({
+            where: { id: lessonId },
+            select: {
+                id: true,
+                title: true,
+                material_url: true,
+            },
+        });
+
+        if (!lesson) {
+            throw new NotFoundException('Lesson not found');
+        }
+
+        if (!lesson.material_url) {
+            throw new NotFoundException('No material uploaded for this lesson');
+        }
+
+        // Extract file path from the public URL
+        // Format: https://sdwhgpvdfjbvkoqhipyd.supabase.co/storage/v1/object/public/materials/filename.pdf
+        const urlParts = lesson.material_url.split('/');
+        const fileName = urlParts[urlParts.length - 1];
+
+        // Get signed URL (valid for 1 hour)
+        const signedUrl = await this.supabaseService.getSignedUrl(fileName, 'materials', 3600);
+
+        return {
+            lessonId: lesson.id,
+            title: lesson.title,
+            materialUrl: signedUrl,
+            expiresIn: 3600, // seconds
+        };
     }
 }
