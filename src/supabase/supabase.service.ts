@@ -30,12 +30,40 @@ export class SupabaseService {
             throw new BadRequestException('No file provided');
         }
 
-        if (file.mimetype !== 'application/pdf') {
-            console.error('File is not PDF:', file.mimetype);
-            throw new BadRequestException('Only PDF files are allowed');
+        // Define allowed file types
+        const allowedPdfTypes = ['application/pdf'];
+        const allowedVideoTypes = [
+            'video/mp4',
+            'video/quicktime',      // .mov
+            'video/x-msvideo',      // .avi
+            'video/webm',
+            'video/x-matroska',     // .mkv
+        ];
+
+        const isPdf = allowedPdfTypes.includes(file.mimetype);
+        const isVideo = allowedVideoTypes.includes(file.mimetype);
+
+        if (!isPdf && !isVideo) {
+            console.error('Invalid file type:', file.mimetype);
+            throw new BadRequestException('Only PDF and video files (mp4, mov, avi, webm, mkv) are allowed');
         }
 
-        console.log('PDF validation passed, preparing upload...');
+        // File size validation
+        const maxPdfSize = 50 * 1024 * 1024; // 50MB
+        const maxVideoSize = 500 * 1024 * 1024; // 500MB
+
+        if (isPdf && file.size > maxPdfSize) {
+            throw new BadRequestException('PDF file size must not exceed 50MB');
+        }
+
+        if (isVideo && file.size > maxVideoSize) {
+            throw new BadRequestException('Video file size must not exceed 500MB');
+        }
+
+        console.log('File validation passed, preparing upload...', {
+            type: isPdf ? 'PDF' : 'Video',
+            size: `${(file.size / 1024 / 1024).toFixed(2)}MB`
+        });
 
         // Create a unique file path
         const fileExt = file.originalname.split('.').pop();

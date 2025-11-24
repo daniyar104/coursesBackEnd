@@ -47,6 +47,13 @@ export class CoursesController {
     return this.coursesService.registerForCourse(id, userId);
   }
 
+  @Get(':id/check-registration')
+  @UseGuards(JwtAuthGuard)
+  async checkRegistration(@Param('id') id: string, @Request() req) {
+    const userId = req.user.userId || req.user.id;
+    return this.coursesService.checkRegistration(userId, id);
+  }
+
   @Post(':id/lessons/:lessonId/access')
   @UseGuards(JwtAuthGuard)
   async accessLesson(

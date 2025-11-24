@@ -221,10 +221,17 @@ Body:
    - POST /admin/courses/:courseId/modules/:moduleId/lessons/:id/material
      - Params: courseId (string), moduleId (string), id (string)
      - Body: Multipart Form Data
-       - file: File (required, must be PDF)
+       - file: File (required)
+         - Allowed types: PDF, Video (mp4, mov, avi, webm, mkv)
+         - Size limits:
+           - PDF: max 50MB
+           - Video: max 500MB
      - Returns:
        - 200 OK: { message: "Material uploaded successfully", lesson: Lesson }
-       - 400 Bad Request: { message: "No file provided" } or { message: "Only PDF files are allowed" }
+       - 400 Bad Request: { message: "No file provided" }
+       - 400 Bad Request: { message: "Only PDF and video files (mp4, mov, avi, webm, mkv) are allowed" }
+       - 400 Bad Request: { message: "PDF file size must not exceed 50MB" }
+       - 400 Bad Request: { message: "Video file size must not exceed 500MB" }
        - 404 Not Found: { message: "Lesson not found" }
 
    Note: Students can access the uploaded material via the `material_url` field in the lesson object returned by `GET /courses/:id`.

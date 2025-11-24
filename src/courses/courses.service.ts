@@ -103,6 +103,22 @@ export class CoursesService {
     return { message: 'Successfully registered', enrollment };
   }
 
+  async checkRegistration(userId: string, courseId: string) {
+    const enrollment = await this.prisma.enrollments.findUnique({
+      where: {
+        user_id_course_id: {
+          user_id: userId,
+          course_id: courseId,
+        },
+      },
+    });
+
+    return {
+      isRegistered: !!enrollment,
+      enrollment: enrollment || null,
+    };
+  }
+
   async completeLesson(userId: string, courseId: string, lessonId: string) {
     // 1. Check if enrollment exists
     const enrollment = await this.prisma.enrollments.findUnique({

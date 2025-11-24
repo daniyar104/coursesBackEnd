@@ -75,6 +75,12 @@ API Endpoints
        - 201 Created: { message: "User already enrolled", enrollment: Enrollment }
        - 404 Not Found: { message: "Course not found" }
 
+   - GET /courses/:id/check-registration
+     - Params: id (string)
+     - Headers: Authorization: Bearer <token>
+     - Returns:
+       - 200 OK: { isRegistered: boolean, enrollment: Enrollment | null }
+
    - POST /courses/:id/lessons/:lessonId/access
      - Params: id (string), lessonId (string)
      - Headers: Authorization: Bearer <token>
