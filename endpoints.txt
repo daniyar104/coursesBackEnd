@@ -1,124 +1,150 @@
-API Endpoints
+API Endpoints (Документация API)
 
-1. Auth Module
+1. Auth Module (Модуль Авторизации)
    - POST /auth/register
-     - Body: RegisterDto
-       - firstName: string
-       - surname: string
-       - email: string (email format)
-       - password: string (min length 6)
-     - Returns:
-       - 201 Created: { user: User }
-       - 401 Unauthorized: { message: "Email already registered" }
+     - Описание: Регистрация нового пользователя.
+     - Тело запроса (Body): RegisterDto
+       - firstName: string (Имя)
+       - surname: string (Фамилия)
+       - email: string (Email, уникальный)
+       - password: string (Пароль, мин. 6 символов)
+     - Возвращает:
+       - 201 Created: { user: User } (Созданный пользователь)
+       - 401 Unauthorized: { message: "Email already registered" } (Email уже занят)
 
    - POST /auth/login
-     - Body:
+     - Описание: Вход в систему (логин).
+     - Тело запроса (Body):
        - email: string
        - password: string
-     - Returns:
-       - 201 Created: { user: User, token: string }
-       - 401 Unauthorized: { message: "Invalid credentials" }
+     - Возвращает:
+       - 201 Created: { user: User, token: string } (Пользователь и JWT токен)
+       - 401 Unauthorized: { message: "Invalid credentials" } (Неверные данные)
 
    - GET /auth/profile
-     - Headers: Authorization: Bearer <token>
-     - Returns:
-       - 200 OK: User (payload from token)
-       - 401 Unauthorized: { message: "Invalid token" }
+     - Описание: Получение профиля текущего пользователя по токену.
+     - Заголовки (Headers): Authorization: Bearer <token>
+     - Возвращает:
+       - 200 OK: User (Данные пользователя из токена)
+       - 401 Unauthorized: { message: "Invalid token" } (Неверный токен)
 
-2. Courses Module
+2. Courses Module (Модуль Курсов)
    - GET /courses
-     - Returns:
-       - 200 OK: { data: Course[] } (includes categories and module count)
+     - Описание: Получение списка всех курсов.
+     - Возвращает:
+       - 200 OK: { data: Course[] } (Список курсов с категориями и количеством модулей)
 
    - GET /courses/categories
-     - Returns:
-       - 200 OK: { data: Category[] }
-       - Category includes:
-         - id: string
-         - name: string
-         - description: string | null
-         - created_at: Date
-
+     - Описание: Получение списка всех категорий курсов.
+     - Возвращает:
+       - 200 OK: { data: Category[] } (Список категорий)
+       - Поля категории: id, name, description, created_at
 
    - GET /courses/enrolled/with-last-lesson
-     - Headers: Authorization: Bearer <token>
-     - Returns:
-       - 200 OK: { data: Course[] } (includes categories, module count, lesson count, enrollment details, and last lesson)
-       - Course includes:
-         - All course fields
-         - categories: Category[]
-         - _count: { modules: number, lessons: number }
-         - enrollment: { id: string, status: string, progress: number, enrolled_at: Date }
-         - lastLesson: { id: string, title: string, module: { id: string, title: string } } | null
+     - Описание: Получение списка курсов, на которые записан пользователь, с информацией о последнем открытом уроке.
+     - Заголовки (Headers): Authorization: Bearer <token>
+     - Возвращает:
+       - 200 OK: { data: Course[] }
+       - Включает: enrollment (прогресс), lastLesson (последний урок: id, title, module)
 
    - GET /courses/enrolled
-     - Headers: Authorization: Bearer <token>
-     - Returns:
-       - 200 OK: { data: Course[] } (includes categories, module count, lesson count, and enrollment details)
-       - Course includes:
-         - All course fields
-         - categories: Category[]
-         - _count: { modules: number, lessons: number }
-         - enrollment: { id: string, status: string, progress: number, enrolled_at: Date }
+     - Описание: Получение списка курсов, на которые записан пользователь (без детальной инфо о последнем уроке).
+     - Заголовки (Headers): Authorization: Bearer <token>
+     - Возвращает:
+       - 200 OK: { data: Course[] } (Список курсов с прогрессом)
 
    - GET /courses/:id
-     - Params: id (string)
-     - Returns:
-       - 200 OK: { data: Course } (includes modules, lessons, categories, reviews)
-       - 404 Not Found: { message: "Course not found" }
+     - Описание: Получение детальной информации о конкретном курсе.
+     - Параметры (Params): id (ID курса)
+     - Возвращает:
+       - 200 OK: { data: Course } (Курс с модулями, уроками, категориями и отзывами)
+       - 404 Not Found: { message: "Course not found" } (Курс не найден)
 
    - POST /courses/:id/register
-     - Params: id (string)
-     - Headers: Authorization: Bearer <token>
-     - Returns:
-       - 201 Created: { message: "Successfully registered", enrollment: Enrollment }
-       - 201 Created: { message: "User already enrolled", enrollment: Enrollment }
-       - 404 Not Found: { message: "Course not found" }
+     - Описание: Запись пользователя на курс.
+     - Параметры (Params): id (ID курса)
+     - Заголовки (Headers): Authorization: Bearer <token>
+     - Возвращает:
+       - 201 Created: { message: "Successfully registered", enrollment: Enrollment } (Успешная запись)
+       - 201 Created: { message: "User already enrolled", enrollment: Enrollment } (Уже записан)
 
    - GET /courses/:id/check-registration
-     - Params: id (string)
-     - Headers: Authorization: Bearer <token>
-     - Returns:
-       - 200 OK: { isRegistered: boolean, enrollment: Enrollment | null }
+     - Описание: Проверка, записан ли пользователь на курс.
+     - Параметры (Params): id (ID курса)
+     - Заголовки (Headers): Authorization: Bearer <token>
+     - Возвращает:
+       - 200 OK: { isRegistered: boolean, enrollment: Enrollment | null } (Статус записи)
 
    - POST /courses/:id/lessons/:lessonId/access
-     - Params: id (string), lessonId (string)
-     - Headers: Authorization: Bearer <token>
-     - Returns:
+     - Описание: Обновление информации о последнем просмотренном уроке (для "Continue Watching").
+     - Параметры (Params): id (ID курса), lessonId (ID урока)
+     - Заголовки (Headers): Authorization: Bearer <token>
+     - Возвращает:
        - 200 OK: { message: "Last lesson updated successfully" }
-       - 404 Not Found: { message: "User is not enrolled in this course" }
-       - 404 Not Found: { message: "Lesson not found in this course" }
+       - 404 Not Found (Если не записан или урок не найден)
 
    - POST /courses/:id/lessons/:lessonId/complete
-     - Params: id (string), lessonId (string)
-     - Headers: Authorization: Bearer <token>
-     - Returns:
-       - 201 Created: { message: "Lesson completed", progress: number }
-       - 404 Not Found: { message: "User is not enrolled in this course" }
-       - 404 Not Found: { message: "Lesson not found in this course" }
-
+     - Описание: Отметка урока как пройденного и обновление общего прогресса курса.
+     - Параметры (Params): id (ID курса), lessonId (ID урока)
+     - Заголовки (Headers): Authorization: Bearer <token>
+     - Возвращает:
+       - 201 Created: { message: "Lesson completed", progress: number } (Новый прогресс в %)
 
    - GET /courses/:id/progress
-     - Params: id (string)
-     - Headers: Authorization: Bearer <token>
-     - Returns:
-       - 200 OK: { progress: number, completedLessonIds: string[] }
-       - 404 Not Found: { message: "User is not enrolled in this course" }
+     - Описание: Получение детального прогресса по курсу (какие уроки пройдены).
+     - Параметры (Params): id (ID курса)
+     - Заголовки (Headers): Authorization: Bearer <token>
+     - Возвращает:
+       - 200 OK: { progress: number, completedLessonIds: string[] } (Прогресс и ID пройденных уроков)
 
-3. Users Module
+3. Users Module (Модуль Пользователей)
    - GET /users/me
-     - Headers: Authorization: Bearer <token>
-     - Returns:
-       - 200 OK: User (excluding password hash)
-       - 404 Not Found: { message: "User not found" }
+     - Описание: Получение полной информации о текущем пользователе.
+     - Заголовки (Headers): Authorization: Bearer <token>
+     - Возвращает:
+       - 200 OK: User (Данные пользователя)
 
-4. Lessons Module
+4. Lessons Module (Модуль Уроков)
    - GET /lessons/:id/material
-     - Params: id (string) - Lesson ID
-     - Headers: Authorization: Bearer <token>
-     - Returns:
-       - 200 OK: { lessonId: string, title: string, materialUrl: string, expiresIn: number }
-       - 404 Not Found: { message: "Lesson not found" }
-       - 404 Not Found: { message: "No material uploaded for this lesson" }
-     - Note: materialUrl is a signed URL valid for 1 hour (3600 seconds)
+     - Описание: Получение ссылки на материалы урока (видео/PDF).
+     - Параметры (Params): id (ID урока)
+     - Заголовки (Headers): Authorization: Bearer <token>
+     - Возвращает:
+       - 200 OK: { lessonId, title, materialUrl, expiresIn } (Временная ссылка на файл)
+       - 404 Not Found (Урок или материал не найден)
 
+5. Tests Module (Модуль Тестов)
+   - GET /user/tests/lesson/:lessonId
+     - Описание: Получение теста, привязанного к конкретному уроку.
+     - Параметры (Params): lessonId (ID урока)
+     - Заголовки (Headers): Authorization: Bearer <token>
+     - Возвращает:
+       - 200 OK: Test (Тест с вопросами и ответами) | null
+
+   - GET /user/tests/module/:moduleId
+     - Описание: Получение теста, привязанного к модулю.
+     - Параметры (Params): moduleId (ID модуля)
+     - Заголовки (Headers): Authorization: Bearer <token>
+     - Возвращает:
+       - 200 OK: Test | null
+
+   - GET /user/tests/course/:courseId
+     - Описание: Получение теста, привязанного к курсу (финальный тест).
+     - Параметры (Params): courseId (ID курса)
+     - Заголовки (Headers): Authorization: Bearer <token>
+     - Возвращает:
+       - 200 OK: Test | null
+
+   - POST /user/tests/:testId/submit
+     - Описание: Отправка ответов на тест и получение результата.
+     - Параметры (Params): testId (ID теста)
+     - Заголовки (Headers): Authorization: Bearer <token>
+     - Тело запроса (Body):
+       - answers: Array<{ questionId: string, answerId: string }> (Массив ответов)
+     - Возвращает:
+       - 201 Created:
+         - id: string (ID результата)
+         - score: number (Баллы в процентах 0-100)
+         - passed: boolean (Сдан ли тест)
+         - completed_at: Date (Дата прохождения)
+       - 404 Not Found (Тест не найден)

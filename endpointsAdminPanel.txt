@@ -360,3 +360,46 @@ Workflow Example:
 5. Reorder lessons:
    PATCH /admin/courses/CRS456/modules/MOD789/lessons/LSN101/reorder
    { "position": 2 }
+
+---
+
+6. Tests Management
+   - POST /tests
+     - Body: CreateTestDto
+       - title: string (required)
+       - description: string (optional)
+       - lesson_id: string (optional)
+       - module_id: string (optional)
+       - course_id: string (optional)
+       - questions_to_show: number (optional, default 0 - show all)
+       - passing_score: number (optional, default 0)
+       - questions: Array<{
+           text: string,
+           type: string (optional, default "single_choice"),
+           answers: Array<{ text: string, is_correct: boolean }>
+         }>
+     - Returns:
+       - 201 Created: Test (includes questions and answers)
+
+   - GET /tests
+     - Returns:
+       - 200 OK: Test[] (includes questions and answers)
+
+   - GET /tests/:id
+     - Params: id (string)
+     - Returns:
+       - 200 OK: Test (includes questions and answers)
+       - 404 Not Found
+
+   - PATCH /tests/:id
+     - Params: id (string)
+     - Body: UpdateTestDto (partial CreateTestDto)
+     - Returns:
+       - 200 OK: Test
+       - 404 Not Found
+
+   - DELETE /tests/:id
+     - Params: id (string)
+     - Returns:
+       - 200 OK: Test (deleted)
+       - 404 Not Found

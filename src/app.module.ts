@@ -10,6 +10,7 @@ import { ModulesModule } from './modules/modules.module';
 import { LessonsModule } from './lessons/lessons.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { SupabaseModule } from './supabase/supabase.module';
+import { TestsModule } from './tests/tests.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { SupabaseModule } from './supabase/supabase.module';
     LessonsModule,
     DashboardModule,
     SupabaseModule,
+    TestsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

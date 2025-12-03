@@ -121,6 +121,9 @@ export class LessonsService {
                 id,
                 module_id: moduleId,
             },
+            include: {
+                tests: true,
+            },
         });
 
         if (!lesson) {

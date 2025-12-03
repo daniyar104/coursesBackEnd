@@ -42,11 +42,16 @@ export class CoursesService {
     const course = await this.prisma.courses.findUnique({
       where: { id: courseId },
       include: {
+        tests: true,
         modules: {
           orderBy: { position: 'asc' },
           include: {
+            tests: true,
             lessons: {
               orderBy: { position: 'asc' },
+              include: {
+                tests: true,
+              },
             },
           },
         },

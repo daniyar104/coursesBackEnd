@@ -76,8 +76,12 @@ export class ModulesService {
                 course_id: courseId,
             },
             include: {
+                tests: true,
                 lessons: {
                     orderBy: { position: 'asc' },
+                    include: {
+                        tests: true,
+                    },
                 },
                 _count: {
                     select: { lessons: true },
