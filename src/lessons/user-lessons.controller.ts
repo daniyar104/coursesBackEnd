@@ -3,6 +3,7 @@ import {
     Get,
     Param,
     UseGuards,
+    Request,
 } from '@nestjs/common';
 import { LessonsService } from './lessons.service';
 import { JwtAuthGuard } from '../auth/jwt.guard';
@@ -11,6 +12,12 @@ import { JwtAuthGuard } from '../auth/jwt.guard';
 @UseGuards(JwtAuthGuard)
 export class UserLessonsController {
     constructor(private readonly lessonsService: LessonsService) { }
+
+    @Get(':id')
+    async getLesson(@Param('id') id: string, @Request() req) {
+        const userId = req.user?.userId || req.user?.id;
+        return this.lessonsService.getLessonById(id, userId);
+    }
 
     /**
      * Get material URL for a specific lesson

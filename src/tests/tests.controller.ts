@@ -1,7 +1,10 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
 import { TestsService } from './tests.service';
 import { CreateTestDto } from './dto/create-test.dto';
 import { UpdateTestDto } from './dto/update-test.dto';
+import { JwtAuthGuard } from '../auth/jwt.guard';
+import { RolesGuard } from '../auth/roles.guard';
+import { Roles } from '../auth/roles.decorator';
 
 @Controller('tests')
 export class TestsController {
@@ -30,5 +33,19 @@ export class TestsController {
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.testsService.remove(id);
+  }
+
+  @Get('module/:moduleId/results')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('teacher')
+  getModuleTestResults(@Param('moduleId') moduleId: string) {
+    return this.testsService.getModuleTestResults(moduleId);
+  }
+
+  @Get('course/:courseId/results')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('teacher')
+  getCourseTestResults(@Param('courseId') courseId: string) {
+    return this.testsService.getCourseTestResults(courseId);
   }
 }

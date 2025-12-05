@@ -37,8 +37,8 @@ export class CoursesService {
     return coursesWithLessonCount;
   }
 
-  // Конкретный курс с урокам
-  async getCourseWithModules(courseId: string) {
+  // Конкретный курс с уроками и статусом завершения
+  async getCourseWithModules(courseId: string, userId?: string) {
     const course = await this.prisma.courses.findUnique({
       where: { id: courseId },
       include: {
@@ -55,13 +55,60 @@ export class CoursesService {
             },
           },
         },
-        categories: true, // если нужен category
-        reviews: true, // если нужны отзывы
+        categories: true,
+        reviews: true,
       },
     });
 
     if (!course) throw new NotFoundException('Course not found');
-    return course;
+
+    // If no userId provided (admin context), return course without completion tracking
+    if (!userId) {
+      return course;
+    }
+
+    // Получаем все завершенные уроки пользователя для этого курса
+    const completedLessons = await this.prisma.lesson_completions.findMany({
+      where: {
+        user_id: userId,
+        course_id: courseId,
+      },
+      select: { lesson_id: true },
+    });
+
+    const completedLessonIds = new Set(completedLessons.map((cl) => cl.lesson_id));
+
+    // Добавляем поле completed и progress к каждому уроку и модулю
+    const modulesWithCompletion = course.modules.map((module) => {
+      const lessonsWithCompletion = module.lessons.map((lesson) => ({
+        ...lesson,
+        completed: completedLessonIds.has(lesson.id),
+      }));
+
+      // Подсчитываем прогресс модуля
+      const totalLessons = lessonsWithCompletion.length;
+      const completedLessonsCount = lessonsWithCompletion.filter(
+        (lesson) => lesson.completed
+      ).length;
+      const progress = totalLessons > 0 ? Math.round((completedLessonsCount / totalLessons) * 100) : 0;
+
+      // Модуль считается завершенным, если все его уроки завершены
+      const allLessonsCompleted =
+        lessonsWithCompletion.length > 0 &&
+        lessonsWithCompletion.every((lesson) => lesson.completed);
+
+      return {
+        ...module,
+        lessons: lessonsWithCompletion,
+        completed: allLessonsCompleted,
+        progress: progress,
+      };
+    });
+
+    return {
+      ...course,
+      modules: modulesWithCompletion,
+    };
   }
 
   async registerForCourse(courseId: string, userId: string) {

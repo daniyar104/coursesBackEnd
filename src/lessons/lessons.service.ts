@@ -275,4 +275,46 @@ export class LessonsService {
             expiresIn: 3600, // seconds
         };
     }
+
+    async getLessonById(lessonId: string, userId?: string) {
+        const lesson = await this.prisma.lessons.findUnique({
+            where: { id: lessonId },
+            include: {
+                tests: true,
+                modules: {
+                    select: {
+                        id: true,
+                        title: true,
+                        course_id: true,
+                        courses: {
+                            select: {
+                                id: true,
+                                title: true,
+                            }
+                        }
+                    }
+                }
+            },
+        });
+
+        if (!lesson) {
+            throw new NotFoundException('Lesson not found');
+        }
+
+        let completed = false;
+        if (userId) {
+            const completion = await this.prisma.lesson_completions.findFirst({
+                where: {
+                    lesson_id: lessonId,
+                    user_id: userId,
+                },
+            });
+            completed = !!completion;
+        }
+
+        return {
+            ...lesson,
+            completed,
+        };
+    }
 }

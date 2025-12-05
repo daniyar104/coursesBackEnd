@@ -35,9 +35,11 @@ export class CoursesController {
   }
 
   @Get(':id')
-  async getCourse(@Param('id') id: string) {
-    const course = await this.coursesService.getCourseWithModules(id);
-    return { data: course }; // можно оборачивать в {data} для консистентности API
+  @UseGuards(JwtAuthGuard)
+  async getCourse(@Param('id') id: string, @Request() req) {
+    const userId = req.user.userId || req.user.id;
+    const course = await this.coursesService.getCourseWithModules(id, userId);
+    return { data: course };
   }
 
   @Post(':id/register')

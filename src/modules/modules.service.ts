@@ -167,4 +167,63 @@ export class ModulesService {
 
         return { message: 'Module position updated successfully', module: updated };
     }
+
+    async getModuleById(moduleId: string, userId?: string) {
+        const module = await this.prisma.modules.findUnique({
+            where: { id: moduleId },
+            include: {
+                tests: true,
+                lessons: {
+                    orderBy: { position: 'asc' },
+                    include: {
+                        tests: true,
+                    },
+                },
+                courses: {
+                    select: {
+                        id: true,
+                        title: true,
+                    }
+                }
+            },
+        });
+
+        if (!module) {
+            throw new NotFoundException('Module not found');
+        }
+
+        if (!userId) {
+            return module;
+        }
+
+        // Get completed lessons for this module
+        const completedLessons = await this.prisma.lesson_completions.findMany({
+            where: {
+                user_id: userId,
+                lessons: {
+                    module_id: moduleId,
+                },
+            },
+            select: { lesson_id: true },
+        });
+
+        const completedLessonIds = new Set(completedLessons.map((cl) => cl.lesson_id));
+
+        const lessonsWithCompletion = module.lessons.map((lesson) => ({
+            ...lesson,
+            completed: completedLessonIds.has(lesson.id),
+        }));
+
+        const totalLessons = lessonsWithCompletion.length;
+        const completedLessonsCount = lessonsWithCompletion.filter((l) => l.completed).length;
+        const progress = totalLessons > 0 ? Math.round((completedLessonsCount / totalLessons) * 100) : 0;
+        const completed = totalLessons > 0 && lessonsWithCompletion.every((l) => l.completed);
+
+        return {
+            ...module,
+            lessons: lessonsWithCompletion,
+            progress,
+            completed,
+        };
+    }
 }

@@ -56,9 +56,14 @@ API Endpoints (Документация API)
    - GET /courses/:id
      - Описание: Получение детальной информации о конкретном курсе.
      - Параметры (Params): id (ID курса)
+     - Заголовки (Headers): Authorization: Bearer <token>
      - Возвращает:
        - 200 OK: { data: Course } (Курс с модулями, уроками, категориями и отзывами)
+         - Каждый урок содержит поле completed: boolean (пройден ли урок пользователем)
+         - Каждый модуль содержит поле completed: boolean (все ли уроки модуля пройдены)
+         - Каждый модуль содержит поле progress: number (процент завершения модуля 0-100)
        - 404 Not Found: { message: "Course not found" } (Курс не найден)
+       - 401 Unauthorized: { message: "Invalid token" } (Неверный токен)
 
    - POST /courses/:id/register
      - Описание: Запись пользователя на курс.
@@ -105,6 +110,18 @@ API Endpoints (Документация API)
        - 200 OK: User (Данные пользователя)
 
 4. Lessons Module (Модуль Уроков)
+   - GET /lessons/:id
+     - Описание: Получение детальной информации об уроке.
+     - Параметры (Params): id (ID урока)
+     - Заголовки (Headers): Authorization: Bearer <token>
+     - Возвращает:
+       - 200 OK: Lesson (Урок с тестами, информацией о модуле и курсе, и статусом завершения)
+         - Поля: id, title, content, material_url, material_type, position, created_at, updated_at
+         - tests: Test[] (Тесты урока)
+         - modules: { id, title, course_id, courses: { id, title } } (Информация о модуле и курсе)
+         - completed: boolean (Завершен ли урок текущим пользователем)
+       - 404 Not Found: { message: "Lesson not found" }
+
    - GET /lessons/:id/material
      - Описание: Получение ссылки на материалы урока (видео/PDF).
      - Параметры (Params): id (ID урока)
@@ -113,7 +130,22 @@ API Endpoints (Документация API)
        - 200 OK: { lessonId, title, materialUrl, expiresIn } (Временная ссылка на файл)
        - 404 Not Found (Урок или материал не найден)
 
-5. Tests Module (Модуль Тестов)
+5. Modules Module (Модуль Модулей)
+   - GET /modules/:id
+     - Описание: Получение детальной информации о модуле с уроками и прогрессом.
+     - Параметры (Params): id (ID модуля)
+     - Заголовки (Headers): Authorization: Bearer <token>
+     - Возвращает:
+       - 200 OK: Module (Модуль с уроками, тестами и статусом завершения)
+         - Поля: id, title, description, position, course_id, created_at, updated_at
+         - tests: Test[] (Тесты модуля)
+         - lessons: Lesson[] (Уроки с полем completed: boolean для каждого)
+         - courses: { id, title } (Информация о курсе)
+         - progress: number (Процент завершения модуля 0-100)
+         - completed: boolean (Все ли уроки модуля завершены)
+       - 404 Not Found: { message: "Module not found" }
+
+6. Tests Module (Модуль Тестов)
    - GET /user/tests/lesson/:lessonId
      - Описание: Получение теста, привязанного к конкретному уроку.
      - Параметры (Params): lessonId (ID урока)
@@ -148,3 +180,4 @@ API Endpoints (Документация API)
          - passed: boolean (Сдан ли тест)
          - completed_at: Date (Дата прохождения)
        - 404 Not Found (Тест не найден)
+

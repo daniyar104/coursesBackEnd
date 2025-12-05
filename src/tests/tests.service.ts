@@ -212,4 +212,83 @@ export class TestsService {
 
     return result;
   }
+
+  // Teacher-facing methods
+  async getModuleTestResults(moduleId: string) {
+    // Find the test for this module
+    const test = await this.prisma.tests.findFirst({
+      where: { module_id: moduleId },
+    });
+
+    if (!test) {
+      return [];
+    }
+
+    // Get all test results for this test with user information
+    const results = await this.prisma.user_test_results.findMany({
+      where: { test_id: test.id },
+      include: {
+        users: {
+          select: {
+            id: true,
+            first_name: true,
+            sur_name: true,
+            email: true,
+          },
+        },
+      },
+      orderBy: {
+        completed_at: 'desc',
+      },
+    });
+
+    return results.map((result) => ({
+      userId: result.users.id,
+      firstName: result.users.first_name,
+      surname: result.users.sur_name,
+      email: result.users.email,
+      score: result.score,
+      passed: result.passed,
+      completedAt: result.completed_at,
+    }));
+  }
+
+  async getCourseTestResults(courseId: string) {
+    // Find the test for this course
+    const test = await this.prisma.tests.findFirst({
+      where: { course_id: courseId },
+    });
+
+    if (!test) {
+      return [];
+    }
+
+    // Get all test results for this test with user information
+    const results = await this.prisma.user_test_results.findMany({
+      where: { test_id: test.id },
+      include: {
+        users: {
+          select: {
+            id: true,
+            first_name: true,
+            sur_name: true,
+            email: true,
+          },
+        },
+      },
+      orderBy: {
+        completed_at: 'desc',
+      },
+    });
+
+    return results.map((result) => ({
+      userId: result.users.id,
+      firstName: result.users.first_name,
+      surname: result.users.sur_name,
+      email: result.users.email,
+      score: result.score,
+      passed: result.passed,
+      completedAt: result.completed_at,
+    }));
+  }
 }
