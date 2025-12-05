@@ -2,13 +2,22 @@
 import { IsEmail, IsNotEmpty, IsString, MinLength, IsOptional } from 'class-validator';
 
 export class RegisterDto {
+  // Support both camelCase and snake_case
   @IsString()
-  @IsNotEmpty()
-  firstName: string;
+  @IsOptional()
+  firstName?: string;
 
   @IsString()
-  @IsNotEmpty()
-  surname: string;
+  @IsOptional()
+  first_name?: string;
+
+  @IsString()
+  @IsOptional()
+  surname?: string;
+
+  @IsString()
+  @IsOptional()
+  sur_name?: string;
 
   @IsEmail()
   @IsNotEmpty()

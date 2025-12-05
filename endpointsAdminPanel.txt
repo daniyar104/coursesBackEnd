@@ -7,15 +7,28 @@ All admin endpoints require:
 
 To register as a teacher:
 POST /auth/register
-Body:
+Body (supports both camelCase and snake_case):
 {
-  "first_name": "John",
+  // Option 1: camelCase (recommended)
+  "firstName": "John",
   "surname": "Doe",
+  
+  // Option 2: snake_case (also supported)
+  "first_name": "John",
+  "sur_name": "Doe",
+  
+  // Common fields
   "email": "teacher@example.com",
-  "password": "password123",
+  "password": "password123",  // min 6 characters
   "role": "teacher",
-  "secretKey": "super_secret_admin_key" (or value of ADMIN_SECRET_KEY env var)
+  "secretKey": "super_secret_admin_key"  // or value of ADMIN_SECRET_KEY env var
 }
+
+Returns:
+- 201 Created: { user: User }
+- 400 Bad Request: Validation errors (missing fields, invalid email, short password)
+- 401 Unauthorized: Invalid secret key or email already registered
+
 
 ---
 
