@@ -33,17 +33,17 @@ export class AdminCoursesController {
     }
 
     @Get(':id')
-    findOne(@Param('id') id: string) {
-        return this.coursesService.getCourseWithModules(id);
+    findOne(@Param('id') id: string, @Req() req) {
+        return this.coursesService.getCourseWithModules(id, undefined, req.user.id);
     }
 
     @Patch(':id')
-    update(@Param('id') id: string, @Body() updateCourseDto: UpdateCourseDto) {
-        return this.coursesService.updateCourse(id, updateCourseDto);
+    update(@Param('id') id: string, @Body() updateCourseDto: UpdateCourseDto, @Req() req) {
+        return this.coursesService.updateCourse(id, updateCourseDto, req.user.id);
     }
 
     @Delete(':id')
-    remove(@Param('id') id: string) {
-        return this.coursesService.deleteCourse(id);
+    remove(@Param('id') id: string, @Req() req) {
+        return this.coursesService.deleteCourse(id, req.user.id);
     }
 }

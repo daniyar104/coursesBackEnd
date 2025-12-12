@@ -38,7 +38,7 @@ export class CoursesService {
   }
 
   // Конкретный курс с уроками и статусом завершения
-  async getCourseWithModules(courseId: string, userId?: string) {
+  async getCourseWithModules(courseId: string, userId?: string, checkTeacherId?: string) {
     const course = await this.prisma.courses.findUnique({
       where: { id: courseId },
       include: {
@@ -61,6 +61,11 @@ export class CoursesService {
     });
 
     if (!course) throw new NotFoundException('Course not found');
+
+    // Security check for admin access
+    if (checkTeacherId && course.teacher_id !== checkTeacherId) {
+      throw new NotFoundException('Course not found'); // Best practice to hide existence
+    }
 
     // If no userId provided (admin context), return course without completion tracking
     if (!userId) {
@@ -449,12 +454,17 @@ export class CoursesService {
     return { message: 'Course created successfully', course };
   }
 
-  async updateCourse(id: string, updateCourseDto: any) {
+  async updateCourse(id: string, updateCourseDto: any, teacherId: string) {
     const course = await this.prisma.courses.findUnique({
       where: { id },
     });
 
     if (!course) {
+      throw new NotFoundException('Course not found');
+    }
+
+    // Security check
+    if (course.teacher_id !== teacherId) {
       throw new NotFoundException('Course not found');
     }
 
@@ -486,7 +496,7 @@ export class CoursesService {
     return { message: 'Course updated successfully', course: updated };
   }
 
-  async deleteCourse(id: string) {
+  async deleteCourse(id: string, teacherId: string) {
     const course = await this.prisma.courses.findUnique({
       where: { id },
       include: {
@@ -500,6 +510,11 @@ export class CoursesService {
     });
 
     if (!course) {
+      throw new NotFoundException('Course not found');
+    }
+
+    // Security check
+    if (course.teacher_id !== teacherId) {
       throw new NotFoundException('Course not found');
     }
 
