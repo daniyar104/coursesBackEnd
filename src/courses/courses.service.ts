@@ -418,7 +418,7 @@ export class CoursesService {
   }
 
   // Admin methods
-  async createCourse(createCourseDto: any) {
+  async createCourse(createCourseDto: any, teacherId: string) {
     // Verify category exists
     const category = await this.prisma.categories.findUnique({
       where: { id: createCourseDto.category_id },
@@ -439,6 +439,7 @@ export class CoursesService {
         full_description: createCourseDto.full_description,
         difficulty_level: createCourseDto.difficulty_level,
         category_id: createCourseDto.category_id,
+        teacher_id: teacherId,
       },
       include: {
         categories: true,
@@ -514,8 +515,11 @@ export class CoursesService {
     };
   }
 
-  async getAllCoursesAdmin() {
+  async getAllCoursesAdmin(teacherId: string) {
     const courses = await this.prisma.courses.findMany({
+      where: {
+        teacher_id: teacherId,
+      },
       orderBy: { created_at: 'desc' },
       include: {
         categories: true,

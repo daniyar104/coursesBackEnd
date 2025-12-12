@@ -7,6 +7,7 @@ import {
     Param,
     Delete,
     UseGuards,
+    Req,
 } from '@nestjs/common';
 import { CoursesService } from './courses.service';
 import { CreateCourseDto } from './dto/create-course.dto';
@@ -22,13 +23,13 @@ export class AdminCoursesController {
     constructor(private readonly coursesService: CoursesService) { }
 
     @Post()
-    create(@Body() createCourseDto: CreateCourseDto) {
-        return this.coursesService.createCourse(createCourseDto);
+    create(@Body() createCourseDto: CreateCourseDto, @Req() req) {
+        return this.coursesService.createCourse(createCourseDto, req.user.id);
     }
 
     @Get()
-    findAll() {
-        return this.coursesService.getAllCoursesAdmin();
+    findAll(@Req() req) {
+        return this.coursesService.getAllCoursesAdmin(req.user.id);
     }
 
     @Get(':id')

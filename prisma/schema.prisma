@@ -48,10 +48,12 @@ model courses {
   avg_rating         Decimal?             @default(0) @db.Decimal(3, 2)
   difficulty_level   String?              @db.VarChar(50)
   category_id        String?              @db.VarChar(16)
+  teacher_id         String?              @db.VarChar(16)
   created_at         DateTime             @default(now()) @db.Timestamptz(6)
   updated_at         DateTime             @default(now()) @db.Timestamptz(6)
   certificates       certificates[]
   categories         categories?          @relation(fields: [category_id], references: [id], onUpdate: NoAction)
+  teacher            users?               @relation("TeacherCourses", fields: [teacher_id], references: [id], onUpdate: NoAction)
   enrollments        enrollments[]
   lesson_completions lesson_completions[]
   modules            modules[]
@@ -60,6 +62,7 @@ model courses {
   tests              tests[]
 
   @@index([category_id], map: "idx_courses_category")
+  @@index([teacher_id], map: "idx_courses_teacher")
   @@index([difficulty_level], map: "idx_courses_difficulty")
 }
 
@@ -162,6 +165,7 @@ model users {
   payments           payments[]
   reviews            reviews[]
   user_test_results  user_test_results[]
+  created_courses    courses[]            @relation("TeacherCourses")
 }
 
 model lesson_completions {
