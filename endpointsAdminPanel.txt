@@ -85,6 +85,7 @@ Returns:
        - full_description: string (optional)
        - difficulty_level: string (optional, max 50 chars)
        - category_id: string (required)
+
      - Returns:
        - 201 Created: { message: "Course created successfully", course: Course }
        - 404 Not Found: { message: "Category not found" }

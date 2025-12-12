@@ -24,26 +24,31 @@ export class AdminCoursesController {
 
     @Post()
     create(@Body() createCourseDto: CreateCourseDto, @Req() req) {
-        return this.coursesService.createCourse(createCourseDto, req.user.id);
+        const userId = req.user.id || req.user.userId;
+        return this.coursesService.createCourse(createCourseDto, userId);
     }
 
     @Get()
     findAll(@Req() req) {
-        return this.coursesService.getAllCoursesAdmin(req.user.id);
+        const userId = req.user.id || req.user.userId;
+        return this.coursesService.getAllCoursesAdmin(userId);
     }
 
     @Get(':id')
     findOne(@Param('id') id: string, @Req() req) {
-        return this.coursesService.getCourseWithModules(id, undefined, req.user.id);
+        const userId = req.user.id || req.user.userId;
+        return this.coursesService.getCourseWithModules(id, undefined, userId);
     }
 
     @Patch(':id')
     update(@Param('id') id: string, @Body() updateCourseDto: UpdateCourseDto, @Req() req) {
-        return this.coursesService.updateCourse(id, updateCourseDto, req.user.id);
+        const userId = req.user.id || req.user.userId;
+        return this.coursesService.updateCourse(id, updateCourseDto, userId);
     }
 
     @Delete(':id')
     remove(@Param('id') id: string, @Req() req) {
-        return this.coursesService.deleteCourse(id, req.user.id);
+        const userId = req.user.id || req.user.userId;
+        return this.coursesService.deleteCourse(id, userId);
     }
 }

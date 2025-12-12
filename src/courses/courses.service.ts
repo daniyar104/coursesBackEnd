@@ -1,6 +1,8 @@
 import { Injectable, NotFoundException, UseGuards } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { JwtAuthGuard } from '../auth/jwt.guard';
+import { CreateCourseDto } from './dto/create-course.dto';
+import { UpdateCourseDto } from './dto/update-course.dto';
 
 @Injectable()
 export class CoursesService {
@@ -423,7 +425,7 @@ export class CoursesService {
   }
 
   // Admin methods
-  async createCourse(createCourseDto: any, teacherId: string) {
+  async createCourse(createCourseDto: CreateCourseDto, teacherId: string) {
     // Verify category exists
     const category = await this.prisma.categories.findUnique({
       where: { id: createCourseDto.category_id },
@@ -443,8 +445,8 @@ export class CoursesService {
         short_description: createCourseDto.short_description,
         full_description: createCourseDto.full_description,
         difficulty_level: createCourseDto.difficulty_level,
-        category_id: createCourseDto.category_id,
-        teacher_id: teacherId,
+        categories: { connect: { id: createCourseDto.category_id } },
+        teacher: { connect: { id: teacherId } },
       },
       include: {
         categories: true,
@@ -454,7 +456,7 @@ export class CoursesService {
     return { message: 'Course created successfully', course };
   }
 
-  async updateCourse(id: string, updateCourseDto: any, teacherId: string) {
+  async updateCourse(id: string, updateCourseDto: UpdateCourseDto, teacherId: string) {
     const course = await this.prisma.courses.findUnique({
       where: { id },
     });
