@@ -435,6 +435,15 @@ export class CoursesService {
       throw new NotFoundException('Category not found');
     }
 
+    // Verify teacher exists
+    const teacher = await this.prisma.users.findUnique({
+      where: { id: teacherId },
+    });
+
+    if (!teacher) {
+      throw new NotFoundException(`Teacher with ID ${teacherId} not found`);
+    }
+
     // Generate course ID
     const courseId = `CRS${Math.floor(Date.now() / 1000) * 1000 + Math.floor(Math.random() * 1000)}`;
 
