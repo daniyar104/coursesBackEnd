@@ -74,6 +74,23 @@ export class CoursesService {
       return course;
     }
 
+    // Проверяем, подписан ли пользователь на курс или является ли он преподавателем
+    let isEnrolled = false;
+    if (course.teacher_id === userId) {
+      // Преподаватель курса имеет полный доступ
+      isEnrolled = true;
+    } else {
+      const enrollment = await this.prisma.enrollments.findUnique({
+        where: {
+          user_id_course_id: {
+            user_id: userId,
+            course_id: courseId,
+          },
+        },
+      });
+      isEnrolled = !!enrollment;
+    }
+
     // Получаем все завершенные уроки пользователя для этого курса
     const completedLessons = await this.prisma.lesson_completions.findMany({
       where: {
@@ -85,12 +102,60 @@ export class CoursesService {
 
     const completedLessonIds = new Set(completedLessons.map((cl) => cl.lesson_id));
 
-    // Добавляем поле completed и progress к каждому уроку и модулю
+    // Получаем все результаты тестов пользователя
+    const userTestResults = await this.prisma.user_test_results.findMany({
+      where: {
+        user_id: userId,
+      },
+      select: {
+        test_id: true,
+        passed: true,
+        score: true,
+      },
+    });
+
+    // Создаем Map для быстрого доступа к результатам тестов
+    const testResultsMap = new Map(
+      userTestResults.map((result) => [
+        result.test_id,
+        { passed: result.passed, score: result.score },
+      ])
+    );
+
+    // Добавляем поле completed, progress, isLocked к каждому модулю и информацию о тестах
     const modulesWithCompletion = course.modules.map((module) => {
-      const lessonsWithCompletion = module.lessons.map((lesson) => ({
-        ...lesson,
-        completed: completedLessonIds.has(lesson.id),
-      }));
+      const lessonsWithCompletion = module.lessons.map((lesson) => {
+        // Добавляем информацию о тестах урока
+        const testsWithCompletion = lesson.tests.map((test) => {
+          const result = testResultsMap.get(test.id);
+          return {
+            ...test,
+            completed: !!result,
+            passed: result?.passed || false,
+            score: result?.score || 0,
+          };
+        });
+
+        // Деструктурируем lesson, исключая старый массив tests
+        const { tests: _lessonTests, ...lessonWithoutTests } = lesson;
+
+        return {
+          ...lessonWithoutTests,
+          completed: completedLessonIds.has(lesson.id),
+          tests: testsWithCompletion,
+        };
+      });
+
+      // Добавляем информацию о тестах модуля
+      const moduleTestsWithCompletion = module.tests.map((test) => {
+        const result = testResultsMap.get(test.id);
+        return {
+          ...test,
+          completed: !!result,
+          passed: result?.passed || false,
+          score: result?.score || 0,
+        };
+      });
 
       // Подсчитываем прогресс модуля
       const totalLessons = lessonsWithCompletion.length;
@@ -104,17 +169,38 @@ export class CoursesService {
         lessonsWithCompletion.length > 0 &&
         lessonsWithCompletion.every((lesson) => lesson.completed);
 
+      // Деструктурируем module, исключая старые массивы lessons и tests
+      const { lessons: _moduleLessons, tests: _moduleTests, ...moduleWithoutArrays } = module;
+
       return {
-        ...module,
+        ...moduleWithoutArrays,
         lessons: lessonsWithCompletion,
+        tests: moduleTestsWithCompletion,
         completed: allLessonsCompleted,
         progress: progress,
+        isLocked: !isEnrolled, // Модуль заблокирован, если пользователь не подписан
       };
     });
 
+    // Добавляем информацию о тестах курса
+    const courseTestsWithCompletion = course.tests.map((test) => {
+      const result = testResultsMap.get(test.id);
+      return {
+        ...test,
+        completed: !!result,
+        passed: result?.passed || false,
+        score: result?.score || 0,
+      };
+    });
+
+    // Деструктурируем course, исключая старые массивы modules и tests
+    const { modules: _courseModules, tests: _courseTests, ...courseWithoutArrays } = course;
+
     return {
-      ...course,
+      ...courseWithoutArrays,
+      tests: courseTestsWithCompletion,
       modules: modulesWithCompletion,
+      isEnrolled, // Добавляем флаг подписки
     };
   }
 

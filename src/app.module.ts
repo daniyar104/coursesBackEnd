@@ -11,6 +11,7 @@ import { LessonsModule } from './lessons/lessons.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { SupabaseModule } from './supabase/supabase.module';
 import { TestsModule } from './tests/tests.module';
+import { PracticesModule } from './practices/practices.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { TestsModule } from './tests/tests.module';
     DashboardModule,
     SupabaseModule,
     TestsModule,
+    PracticesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

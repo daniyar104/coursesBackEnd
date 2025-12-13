@@ -59,11 +59,25 @@ API Endpoints (Документация API)
      - Заголовки (Headers): Authorization: Bearer <token>
      - Возвращает:
        - 200 OK: { data: Course } (Курс с модулями, уроками, категориями и отзывами)
-         - Каждый урок содержит поле completed: boolean (пройден ли урок пользователем)
-         - Каждый модуль содержит поле completed: boolean (все ли уроки модуля пройдены)
-         - Каждый модуль содержит поле progress: number (процент завершения модуля 0-100)
+         - isEnrolled: boolean (подписан ли пользователь на курс)
+         - tests: Test[] (Тесты курса с информацией о прохождении)
+           - Каждый тест содержит:
+             - completed: boolean (пройден ли тест)
+             - passed: boolean (сдан ли тест успешно)
+             - score: number (набранные баллы)
+         - modules: Module[] (Модули курса)
+           - Каждый модуль содержит:
+             - isLocked: boolean (заблокирован ли модуль - true если пользователь не подписан)
+             - completed: boolean (все ли уроки модуля пройдены)
+             - progress: number (процент завершения модуля 0-100)
+             - tests: Test[] (Тесты модуля с информацией о прохождении)
+             - lessons: Lesson[] (Уроки модуля)
+               - Каждый урок содержит:
+                 - completed: boolean (пройден ли урок пользователем)
+                 - tests: Test[] (Тесты урока с информацией о прохождении)
        - 404 Not Found: { message: "Course not found" } (Курс не найден)
        - 401 Unauthorized: { message: "Invalid token" } (Неверный токен)
+
 
    - POST /courses/:id/register
      - Описание: Запись пользователя на курс.
@@ -151,7 +165,12 @@ API Endpoints (Документация API)
      - Параметры (Params): lessonId (ID урока)
      - Заголовки (Headers): Authorization: Bearer <token>
      - Возвращает:
-       - 200 OK: Test (Тест с вопросами и ответами) | null
+       - 200 OK: Test | null
+         - Если тест найден, возвращается объект теста с дополнительными полями:
+           - completed: boolean (пройден ли тест пользователем)
+           - passed: boolean (сдан ли тест успешно)
+           - score: number (набранные баллы, 0-100)
+         - questions: Question[] (Вопросы с ответами)
 
    - GET /user/tests/module/:moduleId
      - Описание: Получение теста, привязанного к модулю.
@@ -159,6 +178,11 @@ API Endpoints (Документация API)
      - Заголовки (Headers): Authorization: Bearer <token>
      - Возвращает:
        - 200 OK: Test | null
+         - Если тест найден, возвращается объект теста с дополнительными полями:
+           - completed: boolean (пройден ли тест пользователем)
+           - passed: boolean (сдан ли тест успешно)
+           - score: number (набранные баллы, 0-100)
+         - questions: Question[] (Вопросы с ответами)
 
    - GET /user/tests/course/:courseId
      - Описание: Получение теста, привязанного к курсу (финальный тест).
@@ -166,6 +190,37 @@ API Endpoints (Документация API)
      - Заголовки (Headers): Authorization: Bearer <token>
      - Возвращает:
        - 200 OK: Test | null
+         - Если тест найден, возвращается объект теста с дополнительными полями:
+           - completed: boolean (пройден ли тест пользователем)
+           - passed: boolean (сдан ли тест успешно)
+           - score: number (набранные баллы, 0-100)
+         - questions: Question[] (Вопросы с ответами)
+
+   - GET /user/tests/:testId/result
+     - Описание: Получение результата пройденного теста для текущего пользователя.
+     - Параметры (Params): testId (ID теста)
+     - Заголовки (Headers): Authorization: Bearer <token>
+     - Возвращает:
+       - 200 OK: TestResult | null
+         - Если тест был пройден, возвращается объект результата:
+           - id: string (ID результата)
+           - score: number (Набранные баллы, 0-100)
+           - passed: boolean (Сдан ли тест успешно)
+           - completed_at: Date (Дата и время прохождения)
+           - test: { id, title, passing_score, questions_to_show } (Информация о тесте)
+         - Если тест не был пройден, возвращается null
+
+   - GET /user/tests/module/:moduleId/result
+     - Описание: Получение результата теста модуля для текущего пользователя.
+     - Параметры (Params): moduleId (ID модуля)
+     - Заголовки (Headers): Authorization: Bearer <token>
+     - Возвращает: 200 OK: TestResult | null
+
+   - GET /user/tests/course/:courseId/result
+     - Описание: Получение результата финального теста курса для текущего пользователя.
+     - Параметры (Params): courseId (ID курса)
+     - Заголовки (Headers): Authorization: Bearer <token>
+     - Возвращает: 200 OK: TestResult | null
 
    - POST /user/tests/:testId/submit
      - Описание: Отправка ответов на тест и получение результата.
@@ -180,4 +235,25 @@ API Endpoints (Документация API)
          - passed: boolean (Сдан ли тест)
          - completed_at: Date (Дата прохождения)
        - 404 Not Found (Тест не найден)
+
+7. Practices Module (Модуль Практики - Задачи с кодом)
+   - GET /practices/lesson/:lessonId
+     - Описание: Получение всех задач для урока.
+     - Роли: все (публичный/авторизованный)
+     - Возвращает: 200 OK: Array<{
+         id: string,
+         lesson_id: string,
+         title: string,
+         description: string | null,
+         language: string (default: "javascript"),
+         initial_code: string | null,
+         expected_output: string | null,
+         test_cases: JSONArray | null,
+         solution_code: string | null,
+         created_at: Date
+       }>
+
+   - GET /practices/:id
+     - Описание: Получение одной задачи по ID.
+     - Возвращает: 200 OK: Practice (объект с полями выше)
 

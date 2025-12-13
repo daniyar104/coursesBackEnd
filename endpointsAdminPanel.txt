@@ -453,3 +453,39 @@ Workflow Example:
          }> (Список студентов с результатами)
        - 200 OK: [] (Пустой массив, если тест не найден или нет результатов)
        - 403 Forbidden: { message: "Insufficient permissions" } (Недостаточно прав)
+
+---
+
+7. Practices Management
+   - POST /practices/lesson/:lessonId
+     - Описание: Создание новой задачи для урока.
+     - Роли: teacher, admin
+     - Параметры (Params): lessonId (ID урока)
+     - Тело запроса (Body):
+       - title: string (Название задачи)
+       - description?: string (Описание)
+       - language?: string (Язык программирования, default: "javascript")
+       - initial_code?: string (Начальный код)
+       - expected_output?: string (Ожидаемый вывод)
+       - test_cases?: JSON (Тестовые кейсы)
+       - solution_code?: string (Правильное решение)
+     - Возвращает:
+       - 201 Created: Practice
+
+   - PATCH /practices/:id
+     - Описание: Обновление задачи.
+     - Роли: teacher, admin
+     - Параметры (Params): id (ID практики)
+     - Тело запроса (Body): Частичные поля из POST (title, description, language, ...)
+     - Возвращает:
+       - 200 OK: Practice
+
+   - DELETE /practices/:id
+     - Описание: Удаление задачи.
+     - Роли: teacher, admin
+     - Параметры (Params): id (ID практики)
+     - Возвращает:
+       - 200 OK: Practice (удаленная)
+
+   - GET /practices/:id (См. endpoints.txt)
+   - GET /practices/lesson/:lessonId (См. endpoints.txt)

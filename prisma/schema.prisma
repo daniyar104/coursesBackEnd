@@ -97,10 +97,30 @@ model lessons {
   enrollments        enrollments[]
   lesson_completions lesson_completions[]
   tests              tests[]
+  practices          practices[]
   modules            modules              @relation(fields: [module_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@index([module_id], map: "idx_lessons_module_id")
   @@index([module_id, position], map: "idx_lessons_module_position")
+}
+
+model practices {
+  id              String   @id @default(uuid()) @db.VarChar(36)
+  lesson_id       String   @db.VarChar(16)
+  title           String   @db.VarChar(300)
+  description     String?  // Описание задачи (что нужно сделать)
+  language        String   @default("javascript") @db.VarChar(50)
+  initial_code    String?  @db.Text // Код, который появляется в редакторе
+  expected_output String?  @db.Text // Ожидаемый вывод (для простых проверок)
+  test_cases      Json?    // JSON с тест-кейсами [{input: "1,2", output: "3"}]
+  solution_code   String?  @db.Text // Решение учителя
+  
+  created_at      DateTime @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime @default(now()) @db.Timestamptz(6)
+
+  lessons         lessons  @relation(fields: [lesson_id], references: [id], onDelete: Cascade)
+  
+  @@index([lesson_id], map: "idx_practices_lesson")
 }
 
 model modules {

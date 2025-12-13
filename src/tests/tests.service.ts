@@ -127,8 +127,8 @@ export class TestsService {
   }
 
   // Student-facing methods
-  findByLesson(lessonId: string) {
-    return this.prisma.tests.findFirst({
+  async findByLesson(lessonId: string, userId?: string) {
+    const test = await this.prisma.tests.findFirst({
       where: { lesson_id: lessonId },
       include: {
         questions: {
@@ -138,10 +138,58 @@ export class TestsService {
         },
       },
     });
+
+    if (!test) {
+      return null;
+    }
+
+    // Sanitize questions (remove is_correct from answers)
+    const sanitizedQuestions = test.questions.map((q) => ({
+      ...q,
+      answers: q.answers.map((a) => ({
+        id: a.id,
+        text: a.text,
+        question_id: a.question_id,
+        created_at: a.created_at,
+        // Exclude is_correct
+      })),
+    }));
+
+    // Base response object
+    const response = {
+      ...test,
+      questions: sanitizedQuestions,
+      completed: false,
+      passed: false,
+      score: 0,
+    };
+
+    if (!userId) {
+      return response;
+    }
+
+    // Get user's test result if exists
+    const userResult = await this.prisma.user_test_results.findFirst({
+      where: {
+        user_id: userId,
+        test_id: test.id,
+      },
+      orderBy: {
+        completed_at: 'desc',
+      },
+    });
+
+    if (userResult) {
+      response.completed = true;
+      response.passed = userResult.passed;
+      response.score = userResult.score;
+    }
+
+    return response;
   }
 
-  findByModule(moduleId: string) {
-    return this.prisma.tests.findFirst({
+  async findByModule(moduleId: string, userId?: string) {
+    const test = await this.prisma.tests.findFirst({
       where: { module_id: moduleId },
       include: {
         questions: {
@@ -151,10 +199,65 @@ export class TestsService {
         },
       },
     });
+
+    if (!test) {
+      return null;
+    }
+
+    // Sanitize questions (remove is_correct from answers)
+    const sanitizedQuestions = test.questions.map((q) => ({
+      ...q,
+      answers: q.answers.map((a) => ({
+        id: a.id,
+        text: a.text,
+        question_id: a.question_id,
+        created_at: a.created_at,
+        // Exclude is_correct
+      })),
+    }));
+
+    // Base response object
+    const response = {
+      ...test,
+      questions: sanitizedQuestions,
+      completed: false,
+      passed: false,
+      score: 0,
+    };
+
+    if (!userId) {
+      return response;
+    }
+
+    // Get user's test result if exists
+    const userResult = await this.prisma.user_test_results.findFirst({
+      where: {
+        user_id: userId,
+        test_id: test.id,
+      },
+      orderBy: {
+        completed_at: 'desc',
+      },
+    });
+
+    if (userResult) {
+      response.completed = true;
+      response.passed = userResult.passed;
+      response.score = userResult.score;
+    }
+
+    console.log('Final response for findByModule:', JSON.stringify({
+      id: response.id,
+      completed: response.completed,
+      passed: response.passed,
+      score: response.score
+    }, null, 2));
+
+    return response;
   }
 
-  findByCourse(courseId: string) {
-    return this.prisma.tests.findFirst({
+  async findByCourse(courseId: string, userId?: string) {
+    const test = await this.prisma.tests.findFirst({
       where: { course_id: courseId },
       include: {
         questions: {
@@ -164,6 +267,54 @@ export class TestsService {
         },
       },
     });
+
+    if (!test) {
+      return null;
+    }
+
+    // Sanitize questions (remove is_correct from answers)
+    const sanitizedQuestions = test.questions.map((q) => ({
+      ...q,
+      answers: q.answers.map((a) => ({
+        id: a.id,
+        text: a.text,
+        question_id: a.question_id,
+        created_at: a.created_at,
+        // Exclude is_correct
+      })),
+    }));
+
+    // Base response object
+    const response = {
+      ...test,
+      questions: sanitizedQuestions,
+      completed: false,
+      passed: false,
+      score: 0,
+    };
+
+    if (!userId) {
+      return response;
+    }
+
+    // Get user's test result if exists
+    const userResult = await this.prisma.user_test_results.findFirst({
+      where: {
+        user_id: userId,
+        test_id: test.id,
+      },
+      orderBy: {
+        completed_at: 'desc',
+      },
+    });
+
+    if (userResult) {
+      response.completed = true;
+      response.passed = userResult.passed;
+      response.score = userResult.score;
+    }
+
+    return response;
   }
 
   async submitTest(userId: string, testId: string, submitTestDto: any) {
@@ -211,6 +362,69 @@ export class TestsService {
     });
 
     return result;
+  }
+
+  async getTestResult(userId: string, testId: string) {
+    // Get the most recent test result for this user and test
+    const result = await this.prisma.user_test_results.findFirst({
+      where: {
+        user_id: userId,
+        test_id: testId,
+      },
+      orderBy: {
+        completed_at: 'desc',
+      },
+      include: {
+        tests: {
+          select: {
+            id: true,
+            title: true,
+            passing_score: true,
+            questions_to_show: true,
+          },
+        },
+      },
+    });
+
+    if (!result) {
+      return null;
+    }
+
+    return {
+      id: result.id,
+      score: result.score,
+      passed: result.passed,
+      completed_at: result.completed_at,
+      test: result.tests,
+    };
+  }
+
+  async getModuleTestResult(userId: string, moduleId: string) {
+    // 1. Find the test for this module
+    const test = await this.prisma.tests.findFirst({
+      where: { module_id: moduleId },
+    });
+
+    if (!test) {
+      return null;
+    }
+
+    // 2. Get the result
+    return this.getTestResult(userId, test.id);
+  }
+
+  async getCourseTestResult(userId: string, courseId: string) {
+    // 1. Find the test for this course
+    const test = await this.prisma.tests.findFirst({
+      where: { course_id: courseId },
+    });
+
+    if (!test) {
+      return null;
+    }
+
+    // 2. Get the result
+    return this.getTestResult(userId, test.id);
   }
 
   // Teacher-facing methods
